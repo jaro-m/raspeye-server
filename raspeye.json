@@ -1,1 +1,1 @@
-{"cam_res": "540x405", "cam_iso": 0, "action": "preview", "cam_shtr_spd": 0, "exit": "no", "cam_exp_mode": "auto"}
+{"tl_camres": [640, 480], "running": [], "tl_ends": 0, "cam_shtr_spd": 0, "exit": "no", "cam_iso": 0, "cam_res": [540, 405], "tl_nop": 1, "tl_starts": 0, "tl_now": 0, "cam_exp_mode": "auto", "tl_delay": 1, "cam_led": 0}
