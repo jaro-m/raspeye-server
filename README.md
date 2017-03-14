@@ -8,3 +8,4 @@ Raspeye-srv is the server. Its 3 main functions are:
 - Preview mode is just sending picture to the client 'live'.
 The function/modes are going to work simultaneously, independently of other modes.
 
+The code will change a lot, it's just the beginning.
