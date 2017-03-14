@@ -70,7 +70,7 @@ def settingstofile(settings):
     filehnd.close()
     return
 
-def validate_time(t):
+def validate_time(t):# needs improving/extending
     try:
         date0, time0 = t.split(' ')
         if '/' in date0:
@@ -170,69 +170,6 @@ def validating_cam_opt(cam_opt_tmp):
                 if cam_opt_tmp[key_] not in constants.EXIT_VAL:
                     cam_opt_tmp[key_] = cam_opt[key_]
     return cam_opt_tmp
-
-def validating_cam_opt_old(cmdstr): #Obsolete now ?
-    res = None
-    if cmdstr == None or cmdstr == '':
-        print('CMDSTR could not be received')
-        return 'failed'
-    else:
-        cmdstr = str(cmdstr).split(',')
-    for cmd in cmdstr:
-        cmd = cmd.split(':')
-        if len(cmd) > 1:
-            cmd0 = cmd[0].strip()[1:-1]
-            cmd1 = cmd[1].strip()
-            if cmd1.startswith('"'):
-                cmd1 = cmd1[1:-1]
-        else:
-            print('Wrong data', cmd)
-            continue
-        if cmd0 in cam_opt:
-            if cmd0 == 'cam_res':
-                if cmd1.startswith("'"):
-                    cmd1 = cmd1[1:-1]
-                    cmd1 = cmd1.split('x')
-                try:
-                    width = int(cmd1[0].strip())
-                    height = int(cmd1[1].strip())
-                    if width <= 1920:
-                        if height <= 1080:
-                            cam_opt[cmd0] = (width, height)
-                    elif width <= 2592:
-                        if height <= 1944:
-                            cam_opt[cmd0] = (width, height)
-                except:
-                    pass
-            elif cmd0 == 'cam_shtr_spd':
-                try:
-                    cmd1 = int(cmd1)
-                    if cmd1 < cam_shtr_spd_maxval:
-                        cam_opt[cmd0] = cmd1
-                except:
-                    pass
-            elif cmd0 == 'cam_iso':
-                try:
-                    cmd1 = int(cmd1)
-                except:
-                    pass
-                if cmd1 in cam_iso_val:
-                    cam_opt[cmd0] = cmd1
-            elif cmd0 == 'cam_exp_mode':
-                if cmd1 in cam_exp_mode_val:
-                    cam_opt[cmd0] = cmd1
-            elif cmd0 == 'cam_led':
-                if cmd1 == '1' or cmd1 == '0':
-                    cam_opt[cmd0] = int(cmd1)
-            elif cmd0 == 'exit':
-                if cmd1 in exit_val:
-                    cam_opt['exit'] = cmd1
-            elif cmd0 == 'action':
-                if cmd1 in action_val:
-                    res = cmd1
-            else:
-                pass
-    return
 
 def mo_detect(): #I'm working on it, it shouldn't take long
     pass

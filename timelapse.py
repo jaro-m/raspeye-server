@@ -37,8 +37,6 @@ def timelapse_mode(camera):
     # camera.iso = 0
     # camera.exposure_mode = 'auto'
 
-    # print('in the function')
-
     def check_dates():
         if cam_opt['tl_start'] > cam_opt['tl_ends']:
             tempval = cam_opt['tl_start']
@@ -154,7 +152,7 @@ def timelapse_mode(camera):
 
     #calculate_times()
 if __name__ == '__main__':
-    print('start')
-    from picamera import PiCamera
-    camera = PiCamera()
-    timelapse_mode(camera)
+    print("It's a module for Rapeye")
+    # from picamera import PiCamera # It was for testing
+    # camera = PiCamera()           #
+    # timelapse_mode(camera)        #

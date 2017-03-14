@@ -2,7 +2,7 @@
 
 def preview_mode(conn, camera, cam_opt):
     import io, struct
-    #global preview_lock
+    #global preview_lock #not implemented ATM
     conn.settimeout(3)#None for blocking socket
     preview_stream = io.BytesIO()
     camera.led = cam_opt['cam_led']
@@ -29,7 +29,7 @@ def preview_mode(conn, camera, cam_opt):
         preview_stream.seek(0)
         preview_stream.truncate()
     preview_stream.close()
-    #conn.shutdown(socket.SHUT_WR)
+    #conn.shutdown(socket.SHUT_WR) #client is shutting down the socket
     conn.close()
     #preview_lock.release()
     print(' <Preview> thread - connection closed')
