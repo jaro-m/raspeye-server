@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-def timelapse_mode(camera):
-    import os, sys, datetime, time
+#Needs a lot modifications and even more testing
+
+def timelapse_mode(camera, cam_opt):
+    import os, sys, datetime, time, shutil
     #from picamera import PiCamera
 
-    global tl_finished, cam_opt
+    global tl_finished#, cam_opt#, camera
     tl_finished = False
     folder = '/home/pi/Downloads/timelapse/'
 
@@ -37,38 +39,42 @@ def timelapse_mode(camera):
     # camera.iso = 0
     # camera.exposure_mode = 'auto'
 
-    def check_dates():
-        if cam_opt['tl_start'] > cam_opt['tl_ends']:
+    def check_dates(cam_opt):
+        #global cam_opt
+        if cam_opt['tl_starts'] > cam_opt['tl_ends']:
             tempval = cam_opt['tl_start']
-            cam_opt['tl_start'] = cam_opt['tl_ends']
+            cam_opt['tl_starts'] = cam_opt['tl_ends']
             cam_opt['tl_ends'] = tempval
             return
 
     def prepare_thetime(thetime):
-        # try:
-        date0, time0 = thetime.split(' ')
-        if '/' in date0:
-            year0, month0, day0 = date0.split('/')
-        elif '-' in date0:
-            year0, month0, day0 = date0.split('-')
+        if not isinstance(thetime, int):
+            # try:
+            date0, time0 = thetime.split(' ')
+            if '/' in date0:
+                year0, month0, day0 = date0.split('/')
+            elif '-' in date0:
+                year0, month0, day0 = date0.split('-')
+            else:
+                return None
+            hour0, minute0 = time0.split(':')
+            # except:
+            #     return None
+            year0 = int(year0)
+            month0 = int(month0)
+            day0 = int(day0)
+            hour0 = int(hour0)
+            minute0 = int(minute0)
+            thetime0 = (year0, month0, day0, hour0, minute0)
+            # thetime1 = (int(x) for x in thetime0)
+            # print('thetime0:', thetime0)
+            return thetime0
         else:
             return None
-        hour0, minute0 = time0.split(':')
-        # except:
-        #     return None
-        year0 = int(year0)
-        month0 = int(month0)
-        day0 = int(day0)
-        hour0 = int(hour0)
-        minute0 = int(minute0)
-        thetime0 = (year0, month0, day0, hour0, minute0)
-        # thetime1 = (int(x) for x in thetime0)
-        # print('thetime0:', thetime0)
-        return thetime0
 
     def calculate_times():
         curtime = datetime.datetime.today()
-        thestart = prepare_thetime(cam_opt['tl_start'])
+        thestart = prepare_thetime(cam_opt['tl_starts'])
         theend = prepare_thetime(cam_opt['tl_ends'])
         print('thestart:', thestart, 'theend:', theend)
         if thestart == None:
@@ -76,6 +82,7 @@ def timelapse_mode(camera):
             #tostart = 0
         else:
             starttime = datetime.datetime(thestart[0], thestart[1], thestart[2], thestart[3], thestart[4])
+            # starttime = datetime.datetime(thestart)
             if (starttime - curtime).total_seconds() < 0:
                 starttime = curtime
         if theend == None:
@@ -84,6 +91,7 @@ def timelapse_mode(camera):
             endtime = curtime + timedelta_now
         else:
             endtime = datetime.datetime(theend[0], theend[1], theend[2], theend[3], theend[4])
+            # endtime = datetime.datetime(theend[0], theend[1], theend[2], theend[3], theend[4])
             if (endtime - curtime).total_seconds() < 0:
                 cam_opt['tl_nop'] = 0
                 return (0,0)
@@ -110,6 +118,7 @@ def timelapse_mode(camera):
         curtime = datetime.datetime.today()
         thestart = prepare_thetime(thetime)
         starttime = datetime.datetime(thestart[0], thestart[1], thestart[2], thestart[3], thestart[4])
+        # starttime = datetime.datetime(thestart)
         tostart = starttime - curtime
         if tostart < 0:
             return 0
@@ -121,9 +130,13 @@ def timelapse_mode(camera):
     def get_values2():
         return cam_opt['tl_starts'], cam_opt['tl_ends']
 
-    check_dates()
+    check_dates(cam_opt)
     #if calculate_times() != None:
-    right_time, delay = calculate_times()
+    try:
+        right_time, delay = calculate_times()
+    except:
+        print('Wrong input! Time lapse will not start')
+        return
     #else:
     #    tl_finished = True
     #    return
@@ -135,17 +148,23 @@ def timelapse_mode(camera):
 
     counter = 0
     for take in range(cam_opt['tl_nop']):
+        disk_space = shutil.disk_usage(folder)
+        if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
+            cam_opt['tl_exit'] = True
+            break
         if delay >= cam_opt['cam_shtr_spd']:
-            camera.capture(folder + datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg"), use_video_port=True, splitter_port=0, quality=85)
+            camera.capture(folder + datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg"), use_video_port=True, splitter_port=0, quality=85)
             print(counter, 'Picture has been taken!')
             counter += 1
-            if cam_opt['tl_exit'] == True:
+            if cam_opt['tl_exit'] == True or cam_opt['exit'] == True or cam_opt['exit'] == 'yes':
                 break
+            print('time lapse in progress...')
             time.sleep(delay - cam_opt['cam_shtr_spd'])
         else:
-            camera.capture(folder + datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg"), use_video_port=True, splitter_port=0, quality=85)
+            camera.capture(folder + datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg"), use_video_port=True, splitter_port=0, quality=85)
             print('delay < cam_shtr_spd')
             pass
+    print('Time lapse has finished!')
     tl_finished = True
     return
 

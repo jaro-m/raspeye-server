@@ -1,4 +1,4 @@
-CAM_OPT_KEYS = {'tl_now', 'tl_apart', 'tl_nop', 'tl_start', 'tl_ends',
+CAM_OPT_KEYS = {'tl_now', 'tl_delay', 'tl_nop', 'tl_starts', 'tl_ends',
 'tl_camres', 'cam_res', 'cam_shtr_spd', 'cam_iso', 'cam_exp_mode',
 'cam_led', 'exit', 'running'}
 

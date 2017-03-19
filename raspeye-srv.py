@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, json, socket, struct, time, picamera, threading, os
-import constants, preview, timelapse#, motion_detection
+import constants, preview, timelapse, motion_detection
 #from timeit import default_timer as timer
 
 try:
@@ -10,10 +10,10 @@ except:
     print("No port number provided")
     sys.exit()
 
-global camera, conn, preview_lock
+global conn, preview_lock#, cam_opt
 
 camera = picamera.PiCamera()
-preview_lock = threading.Lock()
+preview_lock = threading.Lock()# not in use ATM
 
 def start_sockets():
     my_ip = '0.0.0.0'
@@ -32,6 +32,7 @@ def listening2soc(srvsoc):
     conn, clnaddr = srvsoc.accept()
     print('')
     print('Accepted connection from:', clnaddr[0])
+    conn.settimeout(3)#None for blocking socket
     try:
         actionNo = conn.recv(4)
         actionNo = struct.unpack('<L', actionNo)[0]
@@ -94,15 +95,19 @@ def validate_time(t):# needs improving/extending
 
 def validating_cam_opt(cam_opt_tmp):
     global cam_opt
+    keys2del = []
     for _key in cam_opt_tmp.keys():
         if _key not in constants.CAM_OPT_KEYS:
-            del cam_opt_tmp[_key]
+            #del cam_opt_tmp[_key]
+            keys2del.append(_key)
+    for itm in keys2del:
+        del cam_opt_tmp[itm]
     for key_ in constants.CAM_OPT_KEYS:
         if key_ not in cam_opt_tmp:
             cam_opt_tmp[key_] = cam_opt[key_]
         else:
             if key_ == 'tl_now':
-                if cam_opt_temp[key_] not in constants.TL_NOW_VAL:
+                if cam_opt_tmp[key_] not in constants.TL_NOW_VAL:
                     cam_opt_tmp[key_] = cam_opt[key_]
             elif key_ == 'tl_delay':
                 if not isinstance(cam_opt_tmp[key_], int):
@@ -171,30 +176,35 @@ def validating_cam_opt(cam_opt_tmp):
                     cam_opt_tmp[key_] = cam_opt[key_]
     return cam_opt_tmp
 
-def mo_detect(): #I'm working on it, it shouldn't take long
+def mot_detect_obsolete(): #I'm working on it, it shouldn't take long
     pass
 
 def update_opts(conn):
     global cam_opt, camopts_changed
-    try:
-        length = conn.recv(4)
-        length = struct.unpack('<L', actionNo)[0]
-    except:
-        conn.close()
-        return
+    # try:
+    length = conn.recv(4)
+    length = struct.unpack('<L', length)[0]
+    print('length:', length)
+    # except:
+    # print('Could not receive the size info')
+    # conn.close()
+    # return
     data_temp = b''
     data_toread = length
     chunk = 4096
     while data_toread != 0:
         if data_toread >= chunk:
-            datain = client_socket.recv(chunk)
+            datain = conn.recv(chunk)
             data_toread -= len(datain)
         else:
-            datain = client_socket.recv(data_toread)
+            datain = conn.recv(data_toread)
             data_toread -= len(datain)
         data_temp += datain
+    print('All data received')
     cam_opt_s = str(data_temp)[2:-1]
     cam_opt_tmp = json.loads(cam_opt_s)
+    #print('cam_opt_tmp:', len(cam_opt_tmp), cam_opt_tmp)
+    print('')
     for itm in cam_opt_tmp.items():
         print(itm)
     cam_opt = validating_cam_opt(cam_opt_tmp)
@@ -204,32 +214,37 @@ def update_opts(conn):
 
 srvsoc = start_sockets()
 cam_opt = settingup_defaults()
+# modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, cam_opt))
+# modet_mod.start()
 donotexit = True
 while donotexit:
-
+    #try:
     conn, actionNo = listening2soc(srvsoc)
+    #except:
     if actionNo == 0:
         continue
 
     elif actionNo == 10:
         print('')
-        print('<Motion Detection> Mode is starting')
+        print('<Motion Detection> Mode is starting')# motion detection will be started with the server
         print('')
-        mo_detect(conn, camera)
+        modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, cam_opt))
+        modet_mod.start()
+        # mo_detect(conn, camera)
         continue
 
     elif actionNo == 20:
         print('')
-        print('<Time Lapse> Mode is starting')
+        print('<Time Lapse> Mode is starting')# time lapse need more work, but it should already work
         print('')
-        timelapse_thread = threading.Thread(target=timelapse.timelapse_mode, args=(camera))
+        timelapse_thread = threading.Thread(target=timelapse.timelapse_mode, args=(camera, cam_opt))
         timelapse_thread.start()
         #timelapse(conn, camera)
         continue
 
     elif actionNo == 30:
         print('')
-        print('<Preview> Mode is starting')
+        print('<Preview> Mode is starting')#preview works fine
         print('')
         #if preview_lock.acquire(5) == True:
         preview_thread = threading.Thread(target=preview.preview_mode, args=(conn, camera, cam_opt))
@@ -243,5 +258,8 @@ while donotexit:
         print('')
         update_opts(conn)
 
-server_socket.close()
+    if cam_opt['exit'] == 'yes' or cam_opt['exit'] == True:
+        donotexit = False
+
+srvsoc.close()
 sys.exit()
