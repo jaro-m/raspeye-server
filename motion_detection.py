@@ -2,7 +2,7 @@ def mo_detect(camera, cam_opt):
     import picamera.array, datetime, os
     import numpy as np
     from time import sleep
-    #global cam_opt
+    #global
 
     def checking_thefile():
         if not os.path.isfile('md-times.txt'):
@@ -12,9 +12,8 @@ def mo_detect(camera, cam_opt):
 
     def update_md_times():
         thefile = open('md-times.txt', 'a')
-        thefile.write(datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d \n"))
+        thefile.write(datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S.%f\n"))
         thefile.close()
-        #print('mo_detect event time saved')
         return
 
     class MyMotionDetector(picamera.array.PiMotionAnalysis):
@@ -34,16 +33,10 @@ def mo_detect(camera, cam_opt):
     checking_thefile()
     camera.resolution = (640, 480)
     camera.framerate = 30
-    while not cam_opt['mo_det_exit']:
-        # camera.start_recording('/dev/null', format='h264', splitter_port=1, motion_output=MyMotionDetector(camera))
-        camera.start_recording('/dev/null', format='h264', motion_output=MyMotionDetector(camera))
-        # camera.wait_recording(1, splitter_port=1)
-        #camera.wait_recording(1)
-        sleep(1)
-        print(datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d \n"))
-        if cam_opt['exit'] == True or cam_opt['exit'] == 'yes':
-            break
-    # camera.stop_recording(splitter_port=1)
+    camera.start_recording('/dev/null', format='h264', motion_output=MyMotionDetector(camera))
+    while (not cam_opt['mo_det_exit']) or (not cam_opt['exit']) or (not cam_opt['exit']):
+        #print(datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d \n"))
+        pass
     camera.stop_recording()
     return
 
@@ -53,4 +46,5 @@ if __name__ == '__main__':
         global cam_opt
         cam_opt = {}
         cam_opt['mo_det_exit'] = False
-        mo_detect(camera)
+        cam_opt['exit'] = 'no'
+        mo_detect(camera, cam_opt)

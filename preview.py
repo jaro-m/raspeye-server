@@ -8,7 +8,7 @@ def preview_mode(conn, camera, cam_opt):
     camera.led = cam_opt['cam_led']
     connection = True
     while connection:
-        camera.capture(preview_stream, 'jpeg', use_video_port=True, splitter_port=0, quality=85)
+        camera.capture(preview_stream, 'jpeg', use_video_port=True, splitter_port=2, quality=85)
         flsize = preview_stream.tell()
         flen = struct.pack('<L', flsize)
         try:
