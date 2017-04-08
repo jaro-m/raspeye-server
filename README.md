@@ -17,3 +17,5 @@ The code will change a lot, it's just the beginning.
 I have just realised the 'API' will have to change to improve client-server communication.
 A lot will change in near future, but the basis, the foundation has already been made.
 The next bigger job will be on client side (probably GUI enabling better control over the server)
+
+All my work is free software and I'm just trying to figure out which of those licenses would be the best for us.
