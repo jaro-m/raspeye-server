@@ -1,8 +1,6 @@
 def mo_detect(camera, cam_opt):
     import picamera.array, datetime, os
     import numpy as np
-    from time import sleep
-    #global
 
     def checking_thefile():
         if not os.path.isfile('md-times.txt'):
@@ -34,17 +32,10 @@ def mo_detect(camera, cam_opt):
     camera.resolution = (640, 480)
     camera.framerate = 30
     camera.start_recording('/dev/null', format='h264', motion_output=MyMotionDetector(camera))
-    while (not cam_opt['mo_det_exit']) or (not cam_opt['exit']) or (not cam_opt['exit']):
-        #print(datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d \n"))
+    while (not cam_opt['mo_det_exit']) and (not cam_opt['exit']):
         pass
     camera.stop_recording()
     return
 
 if __name__ == '__main__':
-    import picamera
-    with picamera.PiCamera() as camera:
-        global cam_opt
-        cam_opt = {}
-        cam_opt['mo_det_exit'] = False
-        cam_opt['exit'] = 'no'
-        mo_detect(camera, cam_opt)
+        print('motion detection module for raspeye-srv.py')

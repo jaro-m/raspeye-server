@@ -24,3 +24,5 @@ To run the server you need to place the files in the same directory and start ra
 ```python3 raspeye.py 12345
 ```  
 where 12345 is the port number the server is going to use (usually you need to set up port forwarding on your router). And yes - I am  developing it using _Python3_. Although you can test it __I don't recommend to run it__ if you don't know what you're doing (development of this project is in early stage!)
+
+Soon I'll describe how to talk to the server (before I'll be able to finish the client) for curious ones, I'm just in process of changing it. 

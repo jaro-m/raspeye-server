@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#def preview_mode(conn, camera, cam_opt):
 def preview_mode(conn, camera, cam_opt):
     import io, struct
     #global camera #preview_lock #not implemented ATM
@@ -39,4 +40,4 @@ def preview_mode(conn, camera, cam_opt):
     return
 
 if __name__ == '__main__':
-    print("It's just a helper module for RaspEye.py")
+    print("It's just a helper module for raspeye-srv.py")

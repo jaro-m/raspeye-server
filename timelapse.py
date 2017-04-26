@@ -3,7 +3,8 @@
 #Needs a lot modifications and even more testing
 
 def timelapse_mode(camera, cam_opt):
-    import os, sys, datetime, time, shutil
+
+    import datetime, time, shutil# os,  sys
     #from picamera import PiCamera
 
     global tl_finished#, cam_opt#, camera
@@ -30,7 +31,6 @@ def timelapse_mode(camera, cam_opt):
     #     'cam_led': 0,
     #     'exit': 'no',
     #     'running': []}
-    number_of_taken_pictures = 0
 
     # camera = PiCamera()
     # camera.resolution = (1024, 768)
@@ -171,7 +171,4 @@ def timelapse_mode(camera, cam_opt):
 
     #calculate_times()
 if __name__ == '__main__':
-    print("It's a module for Rapeye")
-    # from picamera import PiCamera # It was for testing
-    # camera = PiCamera()           #
-    # timelapse_mode(camera)        #
+    print("It's a module for rapeye-srv.py")
