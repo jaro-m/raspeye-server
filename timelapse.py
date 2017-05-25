@@ -1,174 +1,135 @@
 #!/usr/bin/env python3
 
-#Needs a lot modifications and even more testing
-
-def timelapse_mode(camera, cam_opt):
-
-    import datetime, time, shutil# os,  sys
-    #from picamera import PiCamera
-
-    global tl_finished#, cam_opt#, camera
-    tl_finished = False
-    folder = '/home/pi/Downloads/timelapse/'
-
-    # try:
-    #     camopt = open(fname, 'r')
-    #     cam_opt = json.load(camopt)
-    #     camopt.close()
-    # except:
-    #     cam_opt = {
-    #     'tl_now': 0,
-    #     'tl_delay': 1,
-    #     'tl_nop': 1,
-    #     'tl_starts': None,
-    #     'tl_ends': None,
-    #     'tl_camres': None,
-    #     'tl_exit': 0,
-    #     'cam_res': (540, 405),
-    #     'cam_shtr_spd': 0,
-    #     'cam_iso': 0,
-    #     'cam_exp_mode': 'auto',
-    #     'cam_led': 0,
-    #     'exit': 'no',
-    #     'running': []}
-
-    # camera = PiCamera()
-    # camera.resolution = (1024, 768)
-    # camera.led = False
-    # camera.shutter_speed = 0
-    # camera.iso = 0
-    # camera.exposure_mode = 'auto'
-
-    def check_dates(cam_opt):
-        #global cam_opt
-        if cam_opt['tl_starts'] > cam_opt['tl_ends']:
-            tempval = cam_opt['tl_start']
-            cam_opt['tl_starts'] = cam_opt['tl_ends']
-            cam_opt['tl_ends'] = tempval
-            return
-
-    def prepare_thetime(thetime):
-        if not isinstance(thetime, int):
-            # try:
-            date0, time0 = thetime.split(' ')
-            if '/' in date0:
-                year0, month0, day0 = date0.split('/')
-            elif '-' in date0:
-                year0, month0, day0 = date0.split('-')
+import datetime, copy, shutil, os
+class Timelapse():
+    '''
+    '''
+    def __init__(self, the_path, camera, cam_opt):
+        #import copy, datetime
+        self.the_path = the_path
+        self.camera = camera
+        self.cam_opt_orig = cam_opt
+        self.cam_opt = copy.copy(cam_opt)
+        self.running = False#nothing uses it at the moment
+        self.time_res = datetime.timedelta(microseconds=10000)
+        self.status = [[], []]
+        if os.path.isfile('timelapse.txt'):
+            self.filename = 'timelapse.txt'
+        else:
+            try:
+                fh = open('timelapse.txt', 'w')
+                fh.write('Time Lapse status file,\n')
+            except OSError as err:
+                print('Error occurred', err)
+                self.filename = None
             else:
-                return None
-            hour0, minute0 = time0.split(':')
-            # except:
-            #     return None
-            year0 = int(year0)
-            month0 = int(month0)
-            day0 = int(day0)
-            hour0 = int(hour0)
-            minute0 = int(minute0)
-            thetime0 = (year0, month0, day0, hour0, minute0)
-            # thetime1 = (int(x) for x in thetime0)
-            # print('thetime0:', thetime0)
-            return thetime0
-        else:
-            return None
+                fh.close()
+        self.calculate_times()
 
-    def calculate_times():
-        curtime = datetime.datetime.today()
-        thestart = prepare_thetime(cam_opt['tl_starts'])
-        theend = prepare_thetime(cam_opt['tl_ends'])
-        print('thestart:', thestart, 'theend:', theend)
-        if thestart == None:
-            starttime = curtime
-            #tostart = 0
-        else:
-            starttime = datetime.datetime(thestart[0], thestart[1], thestart[2], thestart[3], thestart[4])
-            # starttime = datetime.datetime(thestart)
-            if (starttime - curtime).total_seconds() < 0:
-                starttime = curtime
-        if theend == None:
-            delay = int(cam_opt['tl_delay'])
-            timedelta_now = datetime.timedelta(seconds = (cam_opt['tl_nop'] * delay))
-            endtime = curtime + timedelta_now
-        else:
-            endtime = datetime.datetime(theend[0], theend[1], theend[2], theend[3], theend[4])
-            # endtime = datetime.datetime(theend[0], theend[1], theend[2], theend[3], theend[4])
-            if (endtime - curtime).total_seconds() < 0:
-                cam_opt['tl_nop'] = 0
-                return (0,0)
-            timespan = round((endtime - starttime).total_seconds())
-            delay = timespan//cam_opt['tl_nop']
-        print('times1:', curtime - starttime, curtime - endtime)
-        print('times2:', starttime - curtime, endtime - curtime)
-        tostart = starttime - curtime
-        tostart = round(tostart.total_seconds())
-        if cam_opt['tl_now'] == 0:
-            if tostart > 0:
-                right_time = round(tostart.total_seconds())
-            else:
-                right_time = 0
-        else:
-            right_time = 0
-        toend = round((endtime - curtime).total_seconds())
-        print('toend:', toend, toend//cam_opt['tl_nop'])
-        print('right_time:', right_time, 'delay:', delay)
-        return (right_time, delay)
+    def calculate_times(self):
+        '''creating time table for taking pictures'''
+        cur_time = datetime.datetime.today()
+        t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
+        #time_table = [cur_time]
+        cntr = 0
+        while cntr < self.cam_opt['tl_nop']:
+            self.status[0].append((cur_time + datetime.timedelta(seconds=self.cam_opt['tl_delay']*cntr), self.the_path))
+            cntr += 1
+        #print('tl status is:', self.status)
 
-    def check_rtime(thetime):
-        #global right_time
-        curtime = datetime.datetime.today()
-        thestart = prepare_thetime(thetime)
-        starttime = datetime.datetime(thestart[0], thestart[1], thestart[2], thestart[3], thestart[4])
-        # starttime = datetime.datetime(thestart)
-        tostart = starttime - curtime
-        if tostart < 0:
-            return 0
-        return round(tostart.total_seconds())
+    def start_now(self):
+        '''The method starts the time lapse process.
+        '''
+        #import datetime, time, shutil, os#,  sys
+        #print('  --md->tl->', self.the_path)#, motiond)
+        self.running = True
+        if 'tl_active' not in self.cam_opt_orig['running']:
+            #self.cam_opt_orig['running'] = self.cam_opt_orig['running'].append('tl_active')
+            self.cam_opt_orig['running'].append('tl_active')
 
-    def get_values1():
-        return cam_opt['tl_now'], cam_opt['tl_delay'], cam_opt['tl_nop']
+        '''main loop'''
+        for take in range(self.cam_opt['tl_nop']):
 
-    def get_values2():
-        return cam_opt['tl_starts'], cam_opt['tl_ends']
-
-    check_dates(cam_opt)
-    #if calculate_times() != None:
-    try:
-        right_time, delay = calculate_times()
-    except:
-        print('Wrong input! Time lapse will not start')
-        return
-    #else:
-    #    tl_finished = True
-    #    return
-
-    while right_time > 0:
-        print(right_time, 'before start')
-        time.sleep(0.5)
-        right_time = check_rtime(cam_opt['tl_starts'])
-
-    counter = 0
-    for take in range(cam_opt['tl_nop']):
-        disk_space = shutil.disk_usage(folder)
-        if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
-            cam_opt['tl_exit'] = True
-            break
-        if delay >= cam_opt['cam_shtr_spd']:
-            camera.capture(folder + datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg"), use_video_port=True, splitter_port=0, quality=85)
-            print(counter, 'Picture has been taken!')
-            counter += 1
-            if cam_opt['tl_exit'] == True or cam_opt['exit'] == True or cam_opt['exit'] == 'yes':
+            '''checking for sufficient space on the disk'''
+            disk_space = shutil.disk_usage(self.the_path)
+            if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
+                self.cam_opt['tl_exit'] = True
                 break
-            print('time lapse in progress...')
-            time.sleep(delay - cam_opt['cam_shtr_spd'])
-        else:
-            camera.capture(folder + datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg"), use_video_port=True, splitter_port=0, quality=85)
-            print('delay < cam_shtr_spd')
-            pass
-    print('Time lapse has finished!')
-    tl_finished = True
+
+            current_pic_name = datetime.datetime.now().strftime("%H.%M.%S_%Y-%m-%d.jpg")
+            self.camera.capture(os.path.join(self.the_path, current_pic_name), use_video_port=True, splitter_port=0, quality=85)
+            self.status[1].append(current_pic_name)
+            print(take+1, 'pictures have been taken!')
+            if self.cam_opt['tl_exit'] == True or self.cam_opt['exit'] == True:
+                break
+            #print('time lapse in progress...')
+
+            '''calculating the time of the next picture'''
+            if take < self.cam_opt['tl_nop']-1:
+                next_pic = self.status[0][take+1]
+                np_delta = abs(datetime.datetime.today() - next_pic)
+                old_npdelta = np_delta
+                while abs(datetime.datetime.today() - next_pic) > self.time_res:
+                    np_delta = abs(datetime.datetime.today() - next_pic)
+                    if np_delta > old_npdelta:
+                        break
+                    old_npdelta = np_delta
+                    if self.cam_opt['tl_exit'] == True or self.cam_opt['exit'] == True:
+                        break
+                    #time.sleep(delay - cam_opt['cam_shtr_spd'])
+        #print('Time lapse has finished!')
+
+        '''After time lapse is finished I want the <status> to be written to disk.'''
+        status = self.get_status()
+        if status != None and self.filename != None:
+            try:
+                filehnd = open(os.path.join(self.the_path, self.filename), 'a') #datetime.datetime.now().strftime("tl-status-%H.%M.%S.txt")), 'w')
+                #filehnd = open(self.the_path, 'w')
+            except OSError as err:
+                print("Can't Open a file! Error:", err)
+            else:
+                try:
+                    st = str(status[0]) + str(status[1])
+                    filehnd.write(st)
+                except (OSError, TypeError) as err:
+                    print(st)
+                    print("Error string for writing file:", err)
+                finally:
+                    filehnd.close()
+        self.running = False#nothing uses it at the moment
+        if 'tl_active' in self.cam_opt_orig['running']:
+            #self.cam_opt_orig['running'] = self.cam_opt_orig['running'].pop('tl_active')
+            ind = self.cam_opt_orig['running'].index('tl_active')
+            self.cam_opt_orig['running'].pop(ind)
+        return
+
+    def update_opts(self, cam_opt):
+        '''this method is for future features'''
+        self.cam_opt = copy.copy(cam_opt)
+        return
+
+    def get_status(self):
+        if self.running == False:
+            return
+        str_status = ()
+        tmp_list = []
+        for item in range(len(self.status[0])):
+            tmp_list.append((str(self.status[0][item][0].strftime("%H.%M.%S_%Y-%m-%d")), self.status[0][item][1]))
+        str_status = [tmp_list, self.status[1]]
+        return str_status
+
+    def is_running(self):
+        return self.running
+
+    def add_jobs(self, tl_args):
+        pass
+
+def timelapse_start(path, camera, cam_opt):
+    #import threading
+    timelapse_instance = Timelapse(path, camera, cam_opt)
+    timelapse_instance.start_now()
+    #del(timelapse_instance)
     return
-
-
     #calculate_times()
 if __name__ == '__main__':
     print("It's a module for rapeye-srv.py")
