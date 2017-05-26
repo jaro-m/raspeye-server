@@ -89,10 +89,10 @@ class Timelapse():
                 print("Can't Open a file! Error:", err)
             else:
                 try:
-                    st = str(status[0]) + str(status[1])
-                    filehnd.write(st)
+                    #st = str(status[0]) + str(status[1])
+                    filehnd.write(status)
                 except (OSError, TypeError) as err:
-                    print(st)
+                    print(status)
                     print("Error string for writing file:", err)
                 finally:
                     filehnd.close()
@@ -111,7 +111,7 @@ class Timelapse():
     def get_status(self):
         if self.running == False:
             return
-        str_status = ()
+        #str_status = ()
         tmp_list = []
         for item in range(len(self.status[0])):
             tmp_list.append((str(self.status[0][item][0].strftime("%H.%M.%S_%Y-%m-%d")), self.status[0][item][1]))

@@ -4,6 +4,11 @@ _RaspEye_ is a result of playing with Raspberry Pi Zero. It is a project that ha
 
 [_Raspeye_](https://github.com/usrbit/raspeye) is a client (it will be developed in future, but at the moment I'm planning to use _RaspEye-srv_ as a back-end for my webapp that I'm developing working on my web front-end skills) that connects to the server and is going to send tasks to server. Also it can receive the preview of the RPi camera.
 
+
+Anyway this project is not to build a ready to use application and bugs-free, but it's aim is to play with many different areas of programming and try new solutions and ways to make things to work in a different way. It's only one of the targets is to deliver fully functional application and also I care about nice features of it. This project (at least at the present state of developement) can eventually be treated as inspiration and examples of ways certain things work (for example how to recording a video and taking pictures simultaneously or how to simply passing arguments between different parts of code, even from different scripts/files)
+
+There's a lot features yet still to come.
+
 ### _raspeye-srv_
 It's the server/back-end of the project. Its three main functions are:
 
@@ -25,4 +30,4 @@ To run the server you need to place the files in the same directory and start ra
 ```  
 where 12345 is the port number the server is going to use (usually you need to set up port forwarding on your router). And yes - I am  developing it using _Python3_. Although you can test it __I don't recommend to run it__ if you don't know what you're doing (development of this project is in early stage!)
 
-Soon I'll describe how to talk to the server (before I'll be able to finish the client) for curious ones, I'm just in process of changing it. 
+Soon I'll describe how to talk to the server (before I'll be able to finish the client) for curious ones, I'm just in process of changing it.
