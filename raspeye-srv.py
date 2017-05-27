@@ -10,9 +10,6 @@ except IndexError:
     print("No port number provided!")
     sys.exit()
 
-#global raspeye_path, conn, preview_lock#, cam_opt
-#global camera, cam_opt, raspeye_path, preview_lock, running#, cam_opt
-
 raspeye_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 print('Starting from the path:', raspeye_path)
 
@@ -22,8 +19,6 @@ try:
 except picamera.exc.PiCameraMMALError:
     print("Camera is in use!")
     sys.exit()
-
-#preview_lock = threading.Lock()# not in use ATM
 
 def start_sockets():
     """Initialization
@@ -53,17 +48,12 @@ def listening2soc(srvsoc):
     conn, clnaddr = srvsoc.accept()
     print('')
     print('Accepted connection from:', clnaddr[0])
-    conn.settimeout(3)#None for blocking socket
-    #try:
+    conn.settimeout(3)#<None> for blocking socket
     actionNo = conn.recv(4)
     actionNo = struct.unpack('<L', actionNo)[0]
-    #except:
-    #    conn.close()
-    #    return 0
-    #else:
     return conn, actionNo
 
-def settingup_defaults():# <---soon to be changed
+def settingup_defaults():
     """Setting up the cam_opt (dictionary with settings)
 
     Input: None
@@ -89,8 +79,7 @@ def settingup_defaults():# <---soon to be changed
 #    filehnd.close()
 #    return
 
-
-def validating_cam_opt(cam_opt_tmp):# <---soon will be changed
+def validating_cam_opt(cam_opt_tmp):
     """The function to validate cam_opt variable (dictionary)
 
     Input: cam_opt_tmp - a dictionary to be checked
@@ -255,13 +244,12 @@ def update_opts(conn):
     #-----------------------------------------
 
     cam_opt = validating_cam_opt(cam_opt_tmp)
-    camopts_changed = True
+    camopts_changed = True# I don't use it ATM
     return
 
 
 #The end of functions' definitions-----
 #The main loop starts here ------------
-#Change of 'API' is planned soon-------
 
 srvsoc = start_sockets()
 cam_opt = settingup_defaults()
@@ -277,9 +265,6 @@ while donotexit:
 
     elif actionNo == 10:
         if 'md_active' in cam_opt['running']:
-            #self.cam_opt_orig['running'] = self.cam_opt_orig['running'].pop('tl_active')
-            #ind = self.cam_opt_orig['running'].index('tl_active')
-            #self.cam_opt_orig['running'].pop(ind)
             print('Motion Detection #mode is running!')
             continue
 
@@ -288,30 +273,24 @@ while donotexit:
         print('')
         modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
         modet_mod.start()
-        # mo_detect(conn, camera)
         continue
 
     elif actionNo == 20:
         print('')
-        print('<Time Lapse> Mode is starting')# time lapse need more work, but it should already work
+        print('<Time Lapse> Mode is starting')# time lapse need more work, but it should work
         print('RASPEYE_PATH =', raspeye_path)
         print('')
-        #timelapse
         timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
         timelapse_thread.start()
         print('tl thread started')
-        #timelapse(conn, camera)
         continue
 
     elif actionNo == 30:
         print('')
         print('<Preview> Mode is starting')#preview works fine
         print('')
-        #if preview_lock.acquire(5) == True:
         preview_thread = threading.Thread(target=preview.preview_mode, args=(conn, camera, cam_opt))
         preview_thread.start()
-        #else:
-        #    conn.close()
 
     elif actionNo == 40:
         print('')
