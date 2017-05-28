@@ -1,5 +1,5 @@
 CAM_OPT_KEYS = {'tl_now', 'tl_delay', 'tl_nop', 'tl_starts', 'tl_ends',
-'tl_camres', 'tl_exit', 'mo_det_exit', 'preview_exit', 'preview_camres', 'cam_res', 'cam_shtr_spd', 'cam_iso', 'cam_exp_mode',
+'tl_camres', 'tl_exit', 'md_exit', 'pr_exit', 'preview_camres', 'cam_res', 'cam_shtr_spd', 'cam_iso', 'cam_exp_mode',
 'cam_led', 'exit', 'running'}
 
 TL_NOW_VAL = {0, 1, True, False}
@@ -21,16 +21,15 @@ CAM_OPT_DEFAULTS = {
 'tl_ends': 0,
 'tl_camres': (640, 480),
 'tl_exit': False,
-'mo_det_exit': False,
-'preview_exit': False,
+'md_exit': False,
+'pr_exit': False,
 'preview_camres': (640, 480),
 'cam_res': (540, 405),
 'cam_shtr_spd': 0,
 'cam_iso': 0,
 'cam_exp_mode': 'auto',
 'cam_led': 0,
-'running': []
+'running': {},
 'exit': False}
-#'running': []}
 
-RUNNING_KEYS = ("tl_active", "md_active", "pr_active")
+RUNNING_KEYS = ("tl_active", "md_active", "pr_active")#probably obsolete

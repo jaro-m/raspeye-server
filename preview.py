@@ -31,6 +31,7 @@ def preview_mode(conn, camera, cam_opt):
         preview_stream.truncate()
         if cam_opt['preview_exit'] or cam_opt['exit']:
             print('pv -', cam_opt['preview_exit'], cam_opt['exit'])
+            #print('Received <exit> signal! (PR)')
             connection = False
     preview_stream.close()
     #conn.shutdown(socket.SHUT_WR) #client is shutting down the socket

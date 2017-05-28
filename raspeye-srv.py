@@ -16,8 +16,8 @@ print('Starting from the path:', raspeye_path)
 
 try:
     camera = picamera.PiCamera()
-except picamera.exc.PiCameraMMALError:
-    print("Camera is in use!")
+except picamera.exc.PiCameraMMALError as err:
+    print("Camera is in use!:", err)
     sys.exit()
 
 def start_sockets():
@@ -44,6 +44,7 @@ def listening2soc(srvsoc):
     Output: conn - client socket object
             actionNo - a number as a command
     """
+    print('')
     print('Listening...')
     conn, clnaddr = srvsoc.accept()
     print('')
@@ -239,6 +240,7 @@ def update_opts(conn):
     cam_opt_tmp = json.loads(cam_opt_s)
     #the code below is only for debugging and will be deleted soon
     print('')
+    print('Printing received data:')
     for itm in cam_opt_tmp.items():
         print(itm)
     #-----------------------------------------
@@ -260,29 +262,39 @@ while donotexit:
     conn, actionNo = listening2soc(srvsoc)
     if actionNo == 0:
         donotexit = False
+        cam_opt['mo_det_exit'] = 1
+        cam_opt['preview_exit'] = 1
+        cam_opt['tl_exit'] = 1
         cam_opt['exit'] = 1
         continue
 
     elif actionNo == 10:
         if 'md_active' in cam_opt['running']:
-            print('Motion Detection #mode is running!')
+            print('Motion Detection is already running!')
             continue
 
         print('')
         print('<Motion Detection> Mode is starting')# motion detection will be started with the server
         print('')
-        modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
-        modet_mod.start()
+        if 'md_active' in cam_opt['running']:
+            self.cam_opt['md_exit'] = True
+        else:
+            modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
+            modet_mod.start()
         continue
 
     elif actionNo == 20:
         print('')
         print('<Time Lapse> Mode is starting')# time lapse need more work, but it should work
-        print('RASPEYE_PATH =', raspeye_path)
         print('')
-        timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
-        timelapse_thread.start()
-        print('tl thread started')
+        if 'tl_active' in cam_opt['running']:
+            tl_instance = cam_opt['running']['tl_active']
+            while tl_instance.getlockstat():
+                pass
+            tl_instance.add_jobs(self.thepath)
+        else:
+            timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
+            timelapse_thread.start()
         continue
 
     elif actionNo == 30:
