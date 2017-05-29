@@ -60,19 +60,19 @@ def settingup_defaults():
     Input: None
     Output: cam_opt - dictionary with all the settings/options/states)
     """
-    global raspeye_path
-    filepath = (os.path.join(raspeye_path, 'raspeye.json'))
-    if os.path.isfile(filepath):
-        filehnd = open(filepath, 'r')
-        cam_opt = json.load(filehnd)
-        filehnd.close()
-    else:
-        cam_opt = constants.CAM_OPT_DEFAULTS
-        filehnd = open(os.path.join(raspeye_path, 'raspeye.json'), 'w')
-        json.dump(cam_opt, filehnd)
-        filehnd.close()
+    # global raspeye_path
+    # filepath = (os.path.join(raspeye_path, 'raspeye.json'))
+    # if os.path.isfile(filepath):
+    #     filehnd = open(filepath, 'r')
+    #     cam_opt = json.load(filehnd)
+    #     filehnd.close()
+    # else:
+    #     cam_opt = constants.CAM_OPT_DEFAULTS
+    #     filehnd = open(os.path.join(raspeye_path, 'raspeye.json'), 'w')
+    #     json.dump(cam_opt, filehnd)
+    #     filehnd.close()
 
-    return cam_opt
+    return constants.CAM_OPT_DEFAULTS #cam_opt
 
 #def settingstofile(settings):
 #    filehnd = open('raspeye.json', 'w')
@@ -277,7 +277,7 @@ while donotexit:
         print('<Motion Detection> Mode is starting')# motion detection will be started with the server
         print('')
         if 'md_active' in cam_opt['running']:
-            self.cam_opt['md_exit'] = True
+            cam_opt['md_exit'] = True
         else:
             modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
             modet_mod.start()
@@ -291,7 +291,7 @@ while donotexit:
             tl_instance = cam_opt['running']['tl_active']
             while tl_instance.getlockstat():
                 pass
-            tl_instance.add_jobs(self.thepath)
+            #tl_instance.add_jobs(self.thepath)#   <--- there's no <add_jobs> method yet :(
         else:
             timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
             timelapse_thread.start()
@@ -310,9 +310,14 @@ while donotexit:
         print('')
         update_opts(conn)
 
-    if cam_opt['exit'] == 'yes' or cam_opt['exit'] == True:
+    if cam_opt['exit'] == True:
         donotexit = False
 
 print('preparing for exit...')
+while len(cam_opt['running']) > 0:
+    cam_opt['tl_exit'] = True
+    cam_opt['md_exit'] = True
+    cam_opt['pr_exit'] = True
+
 srvsoc.close()
 sys.exit()
