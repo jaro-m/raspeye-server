@@ -269,18 +269,13 @@ while donotexit:
         continue
 
     elif actionNo == 10:
-        if 'md_active' in cam_opt['running']:
-            print('Motion Detection is already running!')
-            continue
-
         print('')
         print('<Motion Detection> Mode is starting')# motion detection will be started with the server
         print('')
         if 'md_active' in cam_opt['running']:
             cam_opt['md_exit'] = True
-        else:
-            modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
-            modet_mod.start()
+        modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
+        modet_mod.start()
         continue
 
     elif actionNo == 20:

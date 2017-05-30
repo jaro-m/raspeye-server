@@ -58,8 +58,8 @@ class Timelapse():
         disk_space = shutil.disk_usage(self.raspeye_path)
         if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space (should I leave more/less?)
             return
-            self.status[1].append('Free space on disk <= 200MB')
-            self.cam_opt['tl_exit'] = True
+            # self.status[1].append('Free space on disk <= 200MB')
+            # self.cam_opt['tl_exit'] = True
         else:
             if self.cam_opt['tl_camlock'] == True:
                 timedelta = datetime.timedelta(milliseconds=666)
@@ -87,7 +87,7 @@ class Timelapse():
                         pass
                     else:
                         itsdone = True
-                        print('The picture has been taken (md)')
+                        print('A picture has been taken! (md)')
 
 
     def start_now(self):
@@ -101,8 +101,11 @@ class Timelapse():
         # standard timelapse procedure below
 
         if len(self.status[0]) != len(self.status[1]):
-            picstotake = len(self.status[1])
-            for take in range(self.cam_opt['tl_nop'] - picstotake):
+            #picstotake = len(self.status[1])
+            picstotake = self.cam_opt['tl_nop'] - len(self.status[1])
+            startfrom = len(self.status[1])
+            #for take in range(self.cam_opt['tl_nop'] - picstotake):
+            for take in range(startfrom, picstotake):
                 '''checking for sufficient space on the disk'''
                 disk_space = shutil.disk_usage(self.the_path)
                 if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
@@ -146,7 +149,7 @@ class Timelapse():
                     break
 
                 '''calculating the time of the next picture'''
-                if take < self.cam_opt['tl_nop']-1:
+                if take < self.cam_opt_copy['tl_nop']-1:
                     next_pic = self.status[0][take+1][0]
                     np_delta = abs(datetime.datetime.today() - next_pic)
                     old_npdelta = np_delta
@@ -194,7 +197,7 @@ class Timelapse():
         #return str(self.status)
         tmp_list = []
         for item in range(len(self.status[0])):
-            tmp_list.append((str(self.status[0][item][0].strftime("%H.%M.%S_%Y-%m-%d")), self.status[0][item][1], '\n'))
+            tmp_list.append((str(self.status[0][item][0].strftime("%H.%M.%S_%Y-%m-%d")), self.status[0][item][1]))
         str_status = str([tmp_list, self.status[1]])
         return str_status
 

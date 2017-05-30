@@ -57,8 +57,8 @@ class SimpleMotionDetection():
         filehnd = open(self.thefile, 'a')
         filehnd.write(datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S.%f\n"))
         filehnd.close()
-        #if datetime.datetime.now() >= self.lastpic + self.timedelta:
-        self.lastpic = datetime.datetime.now()
+        if datetime.datetime.now() >= self.lastpic + self.timedelta:
+            self.lastpic = datetime.datetime.now()
             # if 'tl_active' in self.cam_opt['running']:
             #     tl_instance = self.cam_opt['running']['tl_active']
             #     while tl_instance.getlockstat():
@@ -66,20 +66,20 @@ class SimpleMotionDetection():
             #         print('lock!')
             #     tl_instance.take1picture(self.thepath)
             # else:
-        timelapse.timelapse_start(self.thepath, self.camera, self.cam_opt, md=True)
+            timelapse.timelapse_start(self.thepath, self.camera, self.cam_opt, md=True)
         return
 
 
     def start_md(self):
         #import time
-        if 'md_active' in self.cam_opt['running']:
-            self.cam_opt['md_exit'] = True
-            del self.cam_opt['runnig']['md_active']
-        else:
-            self.cam_opt['running']['md_active'] = self
-            self.camera.resolution = (640, 480)
-            self.camera.framerate = 30
-            self.camera.start_recording('/dev/null', format='h264', motion_output=MyMotionDetector(self.camera, self.detected))
+        # if 'md_active' in self.cam_opt['running']:
+        #     self.cam_opt['md_exit'] = True
+        #     del self.cam_opt['runnig']['md_active']
+        # else:
+        self.cam_opt['running']['md_active'] = self
+        self.camera.resolution = (640, 480)
+        self.camera.framerate = 30
+        self.camera.start_recording('/dev/null', format='h264', motion_output=MyMotionDetector(self.camera, self.detected))
         while (not self.cam_opt['md_exit']) and (not self.cam_opt['exit']):
             if self.detected['detected']:
                 self.detected['detected'] = False
