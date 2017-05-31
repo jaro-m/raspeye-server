@@ -12,9 +12,9 @@ There's a lot features yet still to come.
 ### _raspeye-srv_
 It's the server/back-end of the project. Its three main functions are:
 
-- __Motion-detection__ - detecting motion using RPi camera and eventually sending notification to client/email/IM... (at the moment it detects motion, I'm working on an webapp that will use this feature)
-- **Time lapse** - takes sequence of pictures (It's there, but needs a lot of improvements).
-- __Preview mode__ - just sends picture to the client 'live' (It's simple, but it's the most stable from all the modules at the moment).
+- __Motion-detection__ - detecting motion using RPi camera and eventually sending notification to client/email/IM... (at the moment it detects motion and saves pictures to its directory, I'm working on a webapp that will use this feature)
+- **Time lapse** - takes sequence of pictures (it's a simple solution at the moment, but works).
+- __Preview mode__ - just sends picture to the client 'live' (nothing special, it does the job good enough).
 
 The functions/modes work simultaneously, independently of other modes.  
 _Motion detection_ is going to work continuously with ability to terminate it or start it again.  
