@@ -19,7 +19,7 @@ class MyMotionDetector(picamera.array.PiMotionAnalysis):
             ).clip(0, 255).astype(np.uint8)
         # If there're more than 10 vectors with a magnitude greater
         # than 60, then say we've detected motion
-        if (a > 60).sum() > 10:
+        if (a > 50).sum() > 5:
             self.detected['detected'] = True
         else:#?#
             pass #--++==**ooGGWWMMWWGGoo**==++--
@@ -59,19 +59,11 @@ class SimpleMotionDetection():
         filehnd.close()
         if datetime.datetime.now() >= self.lastpic + self.timedelta:
             self.lastpic = datetime.datetime.now()
-            # if 'tl_active' in self.cam_opt['running']:
-            #     tl_instance = self.cam_opt['running']['tl_active']
-            #     while tl_instance.getlockstat():
-            #         pass
-            #         print('lock!')
-            #     tl_instance.take1picture(self.thepath)
-            # else:
             timelapse.timelapse_start(self.thepath, self.camera, self.cam_opt, md=True)
         return
 
 
     def start_md(self):
-        #import time
         # if 'md_active' in self.cam_opt['running']:
         #     self.cam_opt['md_exit'] = True
         #     del self.cam_opt['runnig']['md_active']
@@ -89,16 +81,14 @@ class SimpleMotionDetection():
                 update_path()
         print('Received <exit> signal! (MD)')
         self.camera.stop_recording()
-        #if 'md_active' in self.cam_opt['running']:
-        #    ind = self.cam_opt['running'].index('md_active')
-        #    self.cam_opt['running'].pop(ind)
-        del self.cam_opt['running']['md_active']
+        if 'md_active' in self.cam_opt['running']:
+            del self.cam_opt['running']['md_active']
         return
 
 def mo_detect(camera, connection, cam_opt, raspeye_path):
     md_instance = SimpleMotionDetection(camera, connection, cam_opt, raspeye_path)
     md_instance.start_md()
-    #del(md_instance)
     return
+
 if __name__ == '__main__':
         print('motion detection module for raspeye-srv.py')

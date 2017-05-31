@@ -262,15 +262,15 @@ while donotexit:
     conn, actionNo = listening2soc(srvsoc)
     if actionNo == 0:
         donotexit = False
-        cam_opt['mo_det_exit'] = 1
-        cam_opt['preview_exit'] = 1
+        cam_opt['md_exit'] = 1
+        cam_opt['pr_exit'] = 1
         cam_opt['tl_exit'] = 1
         cam_opt['exit'] = 1
         continue
 
     elif actionNo == 10:
         print('')
-        print('<Motion Detection> Mode is starting')# motion detection will be started with the server
+        print('<Motion Detection> is starting')# motion detection will be started with the server
         print('')
         if 'md_active' in cam_opt['running']:
             cam_opt['md_exit'] = True
@@ -280,7 +280,7 @@ while donotexit:
 
     elif actionNo == 20:
         print('')
-        print('<Time Lapse> Mode is starting')# time lapse need more work, but it should work
+        print('<Time Lapse> is starting')# time lapse need more work, but it should work
         print('')
         if 'tl_active' in cam_opt['running']:
             tl_instance = cam_opt['running']['tl_active']
@@ -294,7 +294,7 @@ while donotexit:
 
     elif actionNo == 30:
         print('')
-        print('<Preview> Mode is starting')#preview works fine
+        print('<Preview> is starting')#preview works fine
         print('')
         preview_thread = threading.Thread(target=preview.preview_mode, args=(conn, camera, cam_opt))
         preview_thread.start()
