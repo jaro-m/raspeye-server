@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, json, socket, struct, picamera, threading, picamera.array, os# time
+import sys, json, socket, struct, picamera, threading, picamera.array, os, copy # time
 import constants, preview, timelapse, motion_detection
 #from timeit import default_timer as timer
 
@@ -73,12 +73,6 @@ def settingup_defaults():
     #     filehnd.close()
 
     return constants.CAM_OPT_DEFAULTS #cam_opt
-
-#def settingstofile(settings):
-#    filehnd = open('raspeye.json', 'w')
-#    json.dump(settings, filehnd)
-#    filehnd.close()
-#    return
 
 def validating_cam_opt(cam_opt_tmp):
     """The function to validate cam_opt variable (dictionary)
@@ -243,6 +237,39 @@ def update_opts(conn):
     print('Printing received data:')
     for itm in cam_opt_tmp.items():
         print(itm)
+    print('')
+    cam_opt = validating_cam_opt(cam_opt_tmp)
+    camopts_changed = True
+    return
+
+
+def send_opts():
+    '''Sends program options/state to the client
+    '''
+    global conn, cam_opt
+    conn.settimeout(3)#None
+    cam_opt_s = json.dumps(cam_opt)
+    optstr = cam_opt_s.encode(encoding='UTF-8')
+    flsize = len(optstr)
+    flen = struct.pack('<L', flsize)
+    try:
+        if conn.sendall(flen) != None:
+            print('Connection error')
+            conn.settimeout(None)
+            return
+        bytes_sent = conn.sendall(optstr)
+    except socket.timeout as err:
+        print('Error while sending data to the client:', err)
+    else:
+        if bytes_sent != None:
+            print('Sending CAM_OPT failure, bytes sent:', bytes_sent, 'out of', filesize)
+            conn.settimeout(None)
+            return
+        print('All data has been sent.')
+    conn.settimeout(None)
+    return
+
+
     #-----------------------------------------
 
     cam_opt = validating_cam_opt(cam_opt_tmp)
@@ -283,13 +310,14 @@ while donotexit:
         print('<Time Lapse> is starting')# time lapse need more work, but it should work
         print('')
         if 'tl_active' in cam_opt['running']:
-            tl_instance = cam_opt['running']['tl_active']
-            while tl_instance.getlockstat():
-                pass
-            #tl_instance.add_jobs(self.thepath)#   <--- there's no <add_jobs> method yet :(
-        else:
-            timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
-            timelapse_thread.start()
+            continue
+        #     tl_instance = cam_opt['running']['tl_active']
+        #     while tl_instance.getlockstat():
+        #         pass
+        #     #tl_instance.add_jobs(self.thepath)#   <--- there's no <add_jobs> method yet :(
+        # else:
+        timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
+        timelapse_thread.start()
         continue
 
     elif actionNo == 30:
@@ -304,6 +332,12 @@ while donotexit:
         print('Updating options')
         print('')
         update_opts(conn)
+
+    elif actionNo == 50:
+        print('')
+        print('Sending Raspeye status to the client')
+        print('')
+        send_opts()
 
     if cam_opt['exit'] == True:
         donotexit = False

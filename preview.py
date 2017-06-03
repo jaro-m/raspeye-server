@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import socket
 #def preview_mode(conn, camera, cam_opt):
 def preview_mode(conn, camera, cam_opt):
     import io, struct
     #global camera #preview_lock #not implemented ATM
+    #print(cam_opt)
     conn.settimeout(3)#None for blocking socket
     preview_stream = io.BytesIO()
     camera.led = cam_opt['cam_led']
@@ -16,7 +18,7 @@ def preview_mode(conn, camera, cam_opt):
             if conn.sendall(flen) != None:
                 connection = False
                 break
-        except:
+        except BrokenPipeError: #socket.timeout: #BrokenPipeError
             connection = False
             break
         preview_stream.seek(0)
@@ -24,15 +26,15 @@ def preview_mode(conn, camera, cam_opt):
             if conn.sendall(preview_stream.read(flsize)) != None:
                 connection = False
                 break
-        except:
+        except socket.timeout:
             connection = False
             break
         preview_stream.seek(0)
         preview_stream.truncate()
-        if cam_opt['preview_exit'] or cam_opt['exit']:
-            print('pv -', cam_opt['preview_exit'], cam_opt['exit'])
-            #print('Received <exit> signal! (PR)')
-            connection = False
+        if cam_opt['pr_exit'] or cam_opt['exit']:
+            print('Received <exit> signal! (PRV)')
+            break
+            #connection = False
     preview_stream.close()
     #conn.shutdown(socket.SHUT_WR) #client is shutting down the socket
     conn.close()

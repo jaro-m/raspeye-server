@@ -64,11 +64,13 @@ class SimpleMotionDetection():
 
 
     def start_md(self):
-        # if 'md_active' in self.cam_opt['running']:
-        #     self.cam_opt['md_exit'] = True
+        if 'md_active' in self.cam_opt['running']:
+             self.cam_opt['md_exit'] = True
         #     del self.cam_opt['runnig']['md_active']
         # else:
-        self.cam_opt['running']['md_active'] = self
+        if self.cam_opt['md_exit']:
+            return
+        self.cam_opt['running']['md_active'] = 1 #self
         self.camera.resolution = (640, 480)
         self.camera.framerate = 30
         self.camera.start_recording('/dev/null', format='h264', motion_output=MyMotionDetector(self.camera, self.detected))

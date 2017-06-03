@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import datetime, copy, shutil, os, picamera
+import datetime, copy, shutil, os, picamera, json
 class Timelapse():
     '''
     '''
@@ -8,7 +8,7 @@ class Timelapse():
         self.raspeye_path = raspeye_path
         self.camera = camera
         self.cam_opt = cam_opt
-        self.cam_opt_copy = copy.copy(cam_opt) #I think I'll need it'
+        #self.cam_opt_copy = copy.copy(cam_opt) #I think I'll need it'
         self.onepic = md
         if self.onepic:
             self.the_path = raspeye_path
@@ -17,13 +17,12 @@ class Timelapse():
             if not os.path.isdir(the_path):
                 os.makedirs(the_path, exist_ok=True)
             self.the_path = the_path
-            self.cam_opt['running']['tl_active'] = self
-            if os.path.isfile(os.path.join(self.the_path, 'timelapse.txt')):
-                self.filename = os.path.join(self.the_path, 'timelapse.txt')
-            else:
+            self.cam_opt['running']['tl_active'] = 1 #self
+            self.filename = os.path.join(self.the_path, 'timelapse.txt')
+            if not os.path.isfile(self.filename):
                 try:
                     fh = open(self.filename, 'w')
-                    fh.write('Time Lapse status file,\n')
+                    #fh.write('Time Lapse status file,\n')
                 except OSError as err:
                     print("Error occurred during creation 'timelapse.txt':\n", err)
                 else:
@@ -41,10 +40,10 @@ class Timelapse():
              especially when jobs will be added to the same file)
         '''
         cur_time = datetime.datetime.today()
-        t_delta = datetime.timedelta(seconds=self.cam_opt_copy['tl_delay'])
+        t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
         cntr = 0
-        while cntr < self.cam_opt_copy['tl_nop']:
-            self.status[0].append((cur_time + datetime.timedelta(seconds=self.cam_opt_copy['tl_delay']*cntr), self.the_path))
+        while cntr < self.cam_opt['tl_nop']:
+            self.status[0].append((cur_time + datetime.timedelta(seconds=self.cam_opt['tl_delay']*cntr), self.the_path))
             cntr += 1
 
     def start_now(self):
@@ -86,7 +85,7 @@ class Timelapse():
                     break
 
                 '''calculating the time of the next picture, I explain it later'''
-                if take < self.cam_opt_copy['tl_nop']-1:
+                if take < self.cam_opt['tl_nop']-1:
                     next_pic = self.status[0][take+1][0]
                     np_delta = abs(datetime.datetime.today() - next_pic)
                     old_npdelta = np_delta
@@ -108,13 +107,14 @@ class Timelapse():
                 except OSError as err:
                     print("Can't Open a file! Error:", err)
                 else:
-                    try:
-                        filehnd.write(status)
-                    except (OSError, TypeError) as err:
-                        print(status)
-                        print("Error message for writing to a file:", err)
-                    finally:
-                        filehnd.close()
+                    #try:
+                        #filehnd.write(status)
+                    json.dump(status, filehnd)
+                    #except (OSError, TypeError) as err:
+                        #print(status)
+                        #print("Error message for writing to a file:", err)
+                    #finally:
+                    filehnd.close()
             if 'tl_active' in self.cam_opt['running']:
                 del self.cam_opt['running']['tl_active']
         return
