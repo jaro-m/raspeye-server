@@ -43,3 +43,4 @@ I know it's not easy to test/run it at the moment (especially without the client
 I'll give more details how to run the server soon. I will slowly start working more on the client than the server, but the hole project still needs a lot of work.
 
 The project is being created on a Raspberry Pi Zero v1.3 with 1st gen. camera module.
+I promise I'll do the commits more frequently.
