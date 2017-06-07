@@ -1,5 +1,5 @@
 CAM_OPT_KEYS = {'tl_now', 'tl_delay', 'tl_nop', 'tl_starts', 'tl_ends',
-'tl_camres', 'tl_camlock', 'tl_exit', 'md_exit', 'pr_exit', 'preview_camres', 'cam_res', 'cam_shtr_spd', 'cam_iso', 'cam_exp_mode',
+'tl_camres', 'tl_exit', 'md_exit', 'pr_exit', 'pr_camres', 'cam_res', 'cam_shtr_spd', 'cam_iso', 'cam_exp_mode',
 'cam_led', 'exit', 'running'}
 
 TL_NOW_VAL = {0, 1, True, False}
@@ -10,7 +10,7 @@ CAM_EXP_MODE_VAL = ('off', 'auto', 'night', 'nightpreview',
 'backlight','spotlight', 'sports', 'snow', 'beach', 'verylong',
 'fixedfps', 'antishake', 'fireworks')
 CAM_LED_VAL = {0, 1, True, False}
-EXIT_VAL = ('yes', 'no', 'quit', 'exit')
+EXIT_VAL = (True, False, 1, 0)
 #ACTION_VAL = ('preview', 'mo_detect', 'timelapse')
 
 CAM_OPT_DEFAULTS = {
@@ -20,11 +20,10 @@ CAM_OPT_DEFAULTS = {
 'tl_starts': 0,
 'tl_ends': 0,
 'tl_camres': (640, 480),
-'tl_camlock': False,
 'tl_exit': False,
 'md_exit': False,
 'pr_exit': False,
-'preview_camres': (640, 480),
+'pr_camres': (640, 480),
 'cam_res': (540, 405),
 'cam_shtr_spd': 0,
 'cam_iso': 0,
