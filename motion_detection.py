@@ -27,12 +27,6 @@ class MyMotionDetector(picamera.array.PiMotionAnalysis):
 class SimpleMotionDetection():
     '''
     '''
-    def update_path(self):
-        the_path = os.path.join(self.raspeye_path, self.DIR_NAME, self.theday)
-        if not os.path.isdir(the_path):
-            os.makedirs(the_path, exist_ok=True)
-        self.thepath = the_path
-
 
     def __init__(self, camera, connection, camera_options, raspeye_path):
         import os
@@ -40,7 +34,6 @@ class SimpleMotionDetection():
         self.conn = connection
         self.cam_opt = camera_options
         self.raspeye_path = raspeye_path
-        self.DIR_NAME = 'md-pictures'
         self.detected = {'detected': False}
         the_file = os.path.join(self.raspeye_path, 'md-timetable.txt')
         if not os.path.isfile(the_file):
@@ -51,6 +44,13 @@ class SimpleMotionDetection():
         self.update_path()
         self.timedelta = datetime.timedelta(seconds=1)
         self.lastpic = datetime.datetime.now()
+        DIR_NAME = 'md-pictures'
+
+    def update_path(self):
+        the_path = os.path.join(self.raspeye_path, DIR_NAME, self.theday)
+        if not os.path.isdir(the_path):
+            os.makedirs(the_path, exist_ok=True)
+        self.thepath = the_path
 
     def update_md_times(self):
         '''writing the time to the time-table file'''
@@ -81,7 +81,7 @@ class SimpleMotionDetection():
             if self.theday != datetime.date.today().isoformat():
                 self.theday = datetime.date.today().isoformat()
                 update_path()
-        print('Received <exit> signal! (MD)')
+        print('[MD] Received <exit> signal!')
         self.camera.stop_recording()
         if 'md_active' in self.cam_opt['running']:
             del self.cam_opt['running']['md_active']
@@ -93,4 +93,4 @@ def mo_detect(camera, connection, cam_opt, raspeye_path):
     return
 
 if __name__ == '__main__':
-        print('motion detection module for raspeye-srv.py')
+        print('[MD] motion detection module for raspeye-srv.py')
