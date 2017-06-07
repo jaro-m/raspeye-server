@@ -34,7 +34,7 @@ def start_sockets():
         print('"')
         sys.exit()
     server_socket.listen(3)
-    print('Server is now running')
+    print('Server is running now')
     return server_socket
 
 def listening2soc(srvsoc):
@@ -55,27 +55,15 @@ def listening2soc(srvsoc):
     return conn, actionNo
 
 def settingup_defaults():
-    """Setting up the cam_opt (dictionary with settings)
+    """Setting up the cam_opt (a dictionary with settings)
 
     Input: None
     Output: cam_opt - dictionary with all the settings/options/states)
     """
-    # global raspeye_path
-    # filepath = (os.path.join(raspeye_path, 'raspeye.json'))
-    # if os.path.isfile(filepath):
-    #     filehnd = open(filepath, 'r')
-    #     cam_opt = json.load(filehnd)
-    #     filehnd.close()
-    # else:
-    #     cam_opt = constants.CAM_OPT_DEFAULTS
-    #     filehnd = open(os.path.join(raspeye_path, 'raspeye.json'), 'w')
-    #     json.dump(cam_opt, filehnd)
-    #     filehnd.close()
-
     return constants.CAM_OPT_DEFAULTS #cam_opt
 
 def validating_cam_opt(cam_opt_tmp):
-    """The function to validate cam_opt variable (dictionary)
+    """The function to validate cam_opt variable (dictionary) <--due to change very soon
 
     Input: cam_opt_tmp - a dictionary to be checked
     Output: returns the same object if all was OK otherwise leaves out all 'bad' bits
@@ -110,108 +98,98 @@ def validating_cam_opt(cam_opt_tmp):
             return thetime
 
     global cam_opt
+
+    # print('Before:') # for debugging
+    # for itm in cam_opt_tmp:
+    #     print(itm, cam_opt_tmp[itm])
+    if 'running' in cam_opt_tmp:
+        del cam_opt_tmp['running']
+
+    '''creating a list of unrecognized keys to delete'''
     keys2del = []
     for _key in cam_opt_tmp.keys():
         if _key not in constants.CAM_OPT_KEYS:
             #del cam_opt_tmp[_key]
             keys2del.append(_key)
+    '''deleting the wrong keys'''
+    #print('The list of wrong keys:', keys2del)
     for itm in keys2del:
         del cam_opt_tmp[itm]
-    for key_ in constants.CAM_OPT_KEYS:
-        if key_ not in cam_opt_tmp:
-            cam_opt_tmp[key_] = cam_opt[key_]
-        else:
-            if key_ == 'tl_now':
-                if cam_opt_tmp[key_] not in constants.TL_NOW_VAL:
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'tl_delay':
-                if not isinstance(cam_opt_tmp[key_], int):
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'tl_nop':
-                if not isinstance(cam_opt_tmp[key_], int):
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'tl_starts':
-                if cam_opt_tmp[key_] != 0:
-                    if not validate_time(cam_opt_tmp[key_]):
-                        cam_opt_tmp[key_] = 0
-            elif key_ == 'tl_ends':
-                if cam_opt_tmp[key_] != 0:
-                    if not validate_time(cam_opt_tmp[key_]):
-                        cam_opt_tmp[key_] = 0
-            elif key_ == 'tl_camres':
-                try:
-                    width = cam_opt_tmp[key_][0]
-                    height = cam_opt_tmp[key_][1]
-                    if not isinstance(width, int):
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    if not isinstance(height, int):
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    if width > 2592:
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    elif height > 1944:
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                except:
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'preview_camres':
-                try:
-                    width = cam_opt_tmp[key_][0]
-                    height = cam_opt_tmp[key_][1]
-                    if not isinstance(width, int):
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    if not isinstance(height, int):
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    if width > 2592:
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    elif height > 1944:
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                except:
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'cam_res':
-                try:
-                    width = cam_opt_tmp[key_][0]
-                    height = cam_opt_tmp[key_][1]
-                    if not isinstance(width, int):
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    if not isinstance(height, int):
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    if width > 2592:
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                    elif height > 1944:
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                except:
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'cam_shtr_spd':
-                if isinstance(cam_opt_tmp[key_], int):
-                    if cam_opt_tmp[key_] > constants.CAM_SHTR_SPD_MAXVAL:
-                        #cam_opt_tmp[key_] = constants.CAM_SHTR_SPD_MAXVAL
-                        cam_opt_tmp[key_] = cam_opt[key_]
-                else:
-                    #cam_opt_tmp[key_] = 0
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'cam_iso':
-                if cam_opt_tmp[key_] not in constants.CAM_ISO_VAL:
-                    #cam_opt_tmp[key_] = 0
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'cam_exp_mode':
-                if cam_opt_tmp[key_] not in constants.CAM_EXP_MODE_VAL:
-                    #cam_opt_tmp[key_] = 'auto'
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'cam_led':
-                if cam_opt_tmp[key_] not in constants.CAM_LED_VAL:
-                    #cam_opt_tmp[key_] = 0
-                    cam_opt_tmp[key_] = cam_opt[key_]
-            elif key_ == 'exit':
-                if cam_opt_tmp[key_] not in constants.EXIT_VAL:
-                    cam_opt_tmp[key_] = cam_opt[key_]
-    return cam_opt_tmp
 
-def update_opts(conn):
+    for key_ in cam_opt_tmp:
+
+        if key_ == 'tl_now':
+            if cam_opt_tmp[key_] in constants.TL_NOW_VAL:
+                cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'tl_delay':
+            if isinstance(cam_opt_tmp[key_], int):
+                cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'tl_nop':
+            if isinstance(cam_opt_tmp[key_], int):
+                cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'tl_starts':
+            if cam_opt_tmp[key_] != 0:
+                if not validate_time(cam_opt_tmp[key_]):
+                    cam_opt[key_] = 0
+        elif key_ == 'tl_ends':
+            if cam_opt_tmp[key_] != 0:
+                if not validate_time(cam_opt_tmp[key_]):
+                    cam_opt[key_] = 0
+        elif key_ == 'tl_camres':
+            try:
+                width = cam_opt_tmp[key_][0]
+                height = cam_opt_tmp[key_][1]
+                if isinstance(width, int) and isinstance(height, int):
+                    if (width < 2592) and (height > 1944):
+                        cam_opt[key_] = cam_opt_tmp[key_]
+            except:
+                print('Wrong camera resolution has been given (TL)')
+        elif key_ == 'pr_camres':
+            try:
+                width = cam_opt_tmp[key_][0]
+                height = cam_opt_tmp[key_][1]
+                if isinstance(width, int) and isinstance(height, int):
+                    if (width < 2592) and (height > 1944):
+                        cam_opt[key_] = cam_opt_tmp[key_]
+            except:
+                print('Wrong camera resolution has been given (PR)')
+        elif key_ == 'cam_res':
+            try:
+                width = cam_opt_tmp[key_][0]
+                height = cam_opt_tmp[key_][1]
+                if isinstance(width, int) and isinstance(height, int):
+                    if (width < 2592) and (height > 1944):
+                        cam_opt[key_] = cam_opt_tmp[key_]
+            except:
+                print('Wrong camera resolution has been given')
+        elif key_ == 'cam_shtr_spd':
+            if isinstance(cam_opt_tmp[key_], int):
+                if cam_opt_tmp[key_] > constants.CAM_SHTR_SPD_MAXVAL:
+                    cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'cam_iso':
+            if cam_opt_tmp[key_] in constants.CAM_ISO_VAL:
+                cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'cam_exp_mode':
+            if cam_opt_tmp[key_] in constants.CAM_EXP_MODE_VAL:
+                cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'cam_led':
+            if cam_opt_tmp[key_] in constants.CAM_LED_VAL:
+                cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'exit':
+            if cam_opt_tmp[key_] in constants.EXIT_VAL:
+                cam_opt[key_] = cam_opt_tmp[key_]
+    # print('After:') # for debugging
+    # for itm in cam_opt:
+    #     print(itm, cam_opt[itm])
+    return
+
+def receive_opts():
     """Downloads new commands/options and set them up in cam_opt var
 
     Input: conn - socket object to make a connection
     Output: None (the function make changes to cam_opt 'on the fly')
     """
-    global cam_opt, camopts_changed
+    global cam_opt, conn
     length = conn.recv(4)
     length = struct.unpack('<L', length)[0]
     data_temp = b''
@@ -229,19 +207,10 @@ def update_opts(conn):
         except socket.timeout as err:
             print("CAM_OPT hasn't been updated. Socket error:", err)
             return
-    print('All data received')
+    print('All data received. Data updated')
     cam_opt_s = str(data_temp)[2:-1]
     cam_opt_tmp = json.loads(cam_opt_s)
-    #the code below is only for debugging and will be deleted soon
-    print('')
-    print('Printing received data:')
-    for itm in cam_opt_tmp.items():
-        print(itm)
-    print('')
-    cam_opt = validating_cam_opt(cam_opt_tmp)
-    camopts_changed = True
-    return
-
+    validating_cam_opt(cam_opt_tmp)
 
 def send_opts():
     '''Sends program options/state to the client
@@ -265,7 +234,7 @@ def send_opts():
             print('Sending CAM_OPT failure, bytes sent:', bytes_sent, 'out of', filesize)
             conn.settimeout(None)
             return
-        print('All data has been sent.')
+        #print('All data has been sent.')
     conn.settimeout(None)
     return
 
@@ -310,14 +279,10 @@ while donotexit:
         print('<Time Lapse> is starting')# time lapse need more work, but it should work
         print('')
         if 'tl_active' in cam_opt['running']:
-            continue
-        #     tl_instance = cam_opt['running']['tl_active']
-        #     while tl_instance.getlockstat():
-        #         pass
-        #     #tl_instance.add_jobs(self.thepath)#   <--- there's no <add_jobs> method yet :(
-        # else:
-        timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
-        timelapse_thread.start()
+            cam_opt['tl_exit'] = True
+        else:
+            timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
+            timelapse_thread.start()
         continue
 
     elif actionNo == 30:
@@ -331,7 +296,7 @@ while donotexit:
         print('')
         print('Updating options')
         print('')
-        update_opts(conn)
+        receive_opts()
 
     elif actionNo == 50:
         print('')
@@ -339,7 +304,7 @@ while donotexit:
         print('')
         send_opts()
 
-    if cam_opt['exit'] == True:
+    if cam_opt['exit']:
         donotexit = False
 
 print('preparing for exit...')
