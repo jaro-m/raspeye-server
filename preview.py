@@ -6,7 +6,11 @@ def preview_mode(conn, camera, cam_opt):
     if not 'pr_active' in cam_opt['running']:
         cam_opt['running']['pr_active'] = 1
     else:
+        del cam_opt['running']['pr_active']
+        cam_opt['pr_exit'] = 0
         return
+
+    print('[PR] Preview is starting...')
     conn.settimeout(3)#None for blocking socket
     preview_stream = io.BytesIO()
     camera.led = cam_opt['cam_led']
@@ -40,6 +44,7 @@ def preview_mode(conn, camera, cam_opt):
     conn.close()
     if 'pr_active' in cam_opt['running']:
         del cam_opt['running']['pr_active']
+    cam_opt['pr_exit'] = 0
     return
 
 if __name__ == '__main__':

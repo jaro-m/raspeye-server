@@ -11,7 +11,7 @@ except IndexError:
     sys.exit()
 
 raspeye_path = os.path.dirname(os.path.abspath(sys.argv[0]))
-print('Starting from the path:', raspeye_path)
+#print('Starting from the path:', raspeye_path)
 
 
 try:
@@ -29,7 +29,7 @@ def start_sockets():
         server_socket.bind((my_ip, my_port))
     except OSError as err:
         print('Address:', my_ip, end='')
-        print(', Error string:', '"', end='')
+        print(', Error message:', '"', end='')
         print(err, end='')
         print('"')
         sys.exit()
@@ -44,14 +44,19 @@ def listening2soc(srvsoc):
     Output: conn - client socket object
             actionNo - a number as a command
     """
-    print('')
-    print('Listening...')
+    #print('')
+    #print('Listening...')
     conn, clnaddr = srvsoc.accept()
-    print('')
-    print('Accepted connection from:', clnaddr[0])
+    #print('')
+    #print('Accepted connection from:', clnaddr[0])
     conn.settimeout(3)#<None> for blocking socket
-    actionNo = conn.recv(4)
-    actionNo = struct.unpack('<L', actionNo)[0]
+    try:
+        actionNo = conn.recv(4)
+    except socket.timeout as err:
+        print('Error:', err)
+        return
+    else:
+        actionNo = struct.unpack('<L', actionNo)[0]
     return conn, actionNo
 
 def settingup_defaults():
@@ -74,7 +79,7 @@ def validating_cam_opt(cam_opt_tmp):
 
         Input: t - string object
         Output: returns False if conversion to 'datetime' object gives error
-                otherwise returns 'datetime' object (True)
+                otherwise returns 'datetime' object
         """
         try:
             date0, time0 = t.split(' ')
@@ -99,22 +104,16 @@ def validating_cam_opt(cam_opt_tmp):
 
     global cam_opt
 
-    # print('Before:') # for debugging
+    # print('---Before:') # for debugging
     # for itm in cam_opt_tmp:
     #     print(itm, cam_opt_tmp[itm])
-    if 'running' in cam_opt_tmp:
-        del cam_opt_tmp['running']
+    if 'running' in cam_opt_tmp: # client can't change it directly!
+        del cam_opt_tmp['running'] #it's used directly only on server-side
 
-    '''creating a list of unrecognized keys to delete'''
-    keys2del = []
+    '''deleting unrecognized keys'''
     for _key in cam_opt_tmp.keys():
         if _key not in constants.CAM_OPT_KEYS:
-            #del cam_opt_tmp[_key]
-            keys2del.append(_key)
-    '''deleting the wrong keys'''
-    #print('The list of wrong keys:', keys2del)
-    for itm in keys2del:
-        del cam_opt_tmp[itm]
+            del cam_opt_tmp[_key]
 
     for key_ in cam_opt_tmp:
 
@@ -135,6 +134,15 @@ def validating_cam_opt(cam_opt_tmp):
             if cam_opt_tmp[key_] != 0:
                 if not validate_time(cam_opt_tmp[key_]):
                     cam_opt[key_] = 0
+        elif key_ == 'tl_exit':
+            #if cam_opt_tmp[key_] in constants.EXIT_VAL:
+            cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'md_exit':
+            #if cam_opt_tmp[key_] in constants.EXIT_VAL:
+            cam_opt[key_] = cam_opt_tmp[key_]
+        elif key_ == 'pr_exit':
+            #if cam_opt_tmp[key_] in constants.EXIT_VAL:
+            cam_opt[key_] = cam_opt_tmp[key_]
         elif key_ == 'tl_camres':
             try:
                 width = cam_opt_tmp[key_][0]
@@ -143,7 +151,7 @@ def validating_cam_opt(cam_opt_tmp):
                     if (width < 2592) and (height > 1944):
                         cam_opt[key_] = cam_opt_tmp[key_]
             except:
-                print('Wrong camera resolution has been given (TL)')
+                print('Given wrong camera resolution (TL)')
         elif key_ == 'pr_camres':
             try:
                 width = cam_opt_tmp[key_][0]
@@ -152,7 +160,7 @@ def validating_cam_opt(cam_opt_tmp):
                     if (width < 2592) and (height > 1944):
                         cam_opt[key_] = cam_opt_tmp[key_]
             except:
-                print('Wrong camera resolution has been given (PR)')
+                print('Given wrong camera resolution (PR)')
         elif key_ == 'cam_res':
             try:
                 width = cam_opt_tmp[key_][0]
@@ -161,7 +169,7 @@ def validating_cam_opt(cam_opt_tmp):
                     if (width < 2592) and (height > 1944):
                         cam_opt[key_] = cam_opt_tmp[key_]
             except:
-                print('Wrong camera resolution has been given')
+                print('Given wrong camera resolution')
         elif key_ == 'cam_shtr_spd':
             if isinstance(cam_opt_tmp[key_], int):
                 if cam_opt_tmp[key_] > constants.CAM_SHTR_SPD_MAXVAL:
@@ -178,7 +186,7 @@ def validating_cam_opt(cam_opt_tmp):
         elif key_ == 'exit':
             if cam_opt_tmp[key_] in constants.EXIT_VAL:
                 cam_opt[key_] = cam_opt_tmp[key_]
-    # print('After:') # for debugging
+    # print('---After:') # for debugging
     # for itm in cam_opt:
     #     print(itm, cam_opt[itm])
     return
@@ -189,7 +197,7 @@ def receive_opts():
     Input: conn - socket object to make a connection
     Output: None (the function make changes to cam_opt 'on the fly')
     """
-    global cam_opt, conn
+    global conn
     length = conn.recv(4)
     length = struct.unpack('<L', length)[0]
     data_temp = b''
@@ -207,7 +215,7 @@ def receive_opts():
         except socket.timeout as err:
             print("CAM_OPT hasn't been updated. Socket error:", err)
             return
-    print('All data received. Data updated')
+    #print('All data received. Data updated')
     cam_opt_s = str(data_temp)[2:-1]
     cam_opt_tmp = json.loads(cam_opt_s)
     validating_cam_opt(cam_opt_tmp)
@@ -265,9 +273,9 @@ while donotexit:
         continue
 
     elif actionNo == 10:
-        print('')
-        print('<Motion Detection> is starting')# motion detection will be started with the server
-        print('')
+        # print('')
+        # print('<Motion Detection> is starting')# motion detection will be started with the server
+        # print('')
         if 'md_active' in cam_opt['running']:
             cam_opt['md_exit'] = True
         modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
@@ -275,9 +283,11 @@ while donotexit:
         continue
 
     elif actionNo == 20:
-        print('')
-        print('<Time Lapse> is starting')# time lapse need more work, but it should work
-        print('')
+        # print('')
+        # print('<Time Lapse> is starting')# time lapse need more work, but it should work
+        # print('')
+        #for _key in cam_opt:
+        #    print(_key,':', cam_opt[_key])
         if 'tl_active' in cam_opt['running']:
             cam_opt['tl_exit'] = True
         else:
@@ -286,22 +296,22 @@ while donotexit:
         continue
 
     elif actionNo == 30:
-        print('')
-        print('<Preview> is starting')#preview works fine
-        print('')
+        # print('')
+        # print('<Preview> is starting')#preview works fine
+        # print('')
         preview_thread = threading.Thread(target=preview.preview_mode, args=(conn, camera, cam_opt))
         preview_thread.start()
 
     elif actionNo == 40:
-        print('')
-        print('Updating options')
-        print('')
+        # print('')
+        # print('Updating options')
+        # print('')
         receive_opts()
 
     elif actionNo == 50:
-        print('')
-        print('Sending Raspeye status to the client')
-        print('')
+        # print('')
+        # print('Sending Raspeye status to the client')
+        # print('')
         send_opts()
 
     if cam_opt['exit']:

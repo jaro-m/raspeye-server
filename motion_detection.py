@@ -64,11 +64,14 @@ class SimpleMotionDetection():
 
 
     def start_md(self):
-        if 'md_active' in self.cam_opt['running']:
+        if 'md_active' in self.cam_opt['running']: # this is just in case, probably not needed at all
              self.cam_opt['md_exit'] = True
         #     del self.cam_opt['runnig']['md_active']
         # else:
-        if self.cam_opt['md_exit']:
+        if self.cam_opt['md_exit']: # for testing
+            if 'md_active' in self.cam_opt['running']:
+                del self.cam_opt['running']['md_active']
+            self.cam_opt['md_exit'] = 0
             return
         self.cam_opt['running']['md_active'] = 1 #self
         self.camera.resolution = (640, 480)
@@ -85,6 +88,7 @@ class SimpleMotionDetection():
         self.camera.stop_recording()
         if 'md_active' in self.cam_opt['running']:
             del self.cam_opt['running']['md_active']
+        self.cam_opt['md_exit'] = 0
         return
 
 def mo_detect(camera, connection, cam_opt, raspeye_path):

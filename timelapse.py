@@ -13,24 +13,27 @@ class Timelapse():
         if self.onepic:
             self.the_path = raspeye_path
         else:
-            self.cam_opt['running']['tl_active'] = 1
-            the_path = os.path.join(self.raspeye_path, 'timelapse')
-            if not os.path.isdir(the_path):
-                os.makedirs(the_path, exist_ok=True)
-            self.the_path = the_path
-            self.filename = os.path.join(self.the_path, 'timelapse.txt')
-            if not os.path.isfile(self.filename):
-                try:
-                    fh = open(self.filename, 'w')
-                except OSError as err:
-                    print("[TL] Error occurred during creation of 'timelapse.txt':\n", err)
-                else:
-                    fh.close()
-        self.time_res = datetime.timedelta(microseconds=10000)
-        self.status = [[], []]
-        self.filename = None
-        if not self.onepic:
-            self.calculate_times()
+            if 'tl_active' in self.cam_opt['running']:
+                self.cam_opt['tl_exit'] = True
+                #return
+            else:
+                self.cam_opt['running']['tl_active'] = 1
+                the_path = os.path.join(self.raspeye_path, 'timelapse')
+                if not os.path.isdir(the_path):
+                    os.makedirs(the_path, exist_ok=True)
+                self.the_path = the_path
+                self.filename = os.path.join(self.the_path, 'timelapse.txt')
+                if not os.path.isfile(self.filename):
+                    try:
+                        fh = open(self.filename, 'w')
+                    except OSError as err:
+                        print("[TL] Error occurred during creation of 'timelapse.txt':\n", err)
+                    else:
+                        fh.close()
+                self.time_res = datetime.timedelta(microseconds=10000)
+                self.status = [[], []]
+                self.filename = None
+                self.calculate_times()
 
 
     def calculate_times(self):#
@@ -48,20 +51,23 @@ class Timelapse():
     def start_now(self):
         '''The method starts the actual time lapse process.
         '''
-        if self.cam_opt['tl_exit']:
-            print('[TL] Finishing now')
-            return
-
         #the code below is executed by motion detecting module (separate thread)
-        elif self.onepic: #if motion detection module needs a pic this will provide it
+        if self.onepic: #if motion detection module needs a pic this will provide it
             '''checking for sufficient space on the disk'''
             disk_space = shutil.disk_usage(self.the_path)
             if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
-                self.status[1].append('Free space on disk <= 200MB')
+                #self.status[1].append('Free space on disk <= 200MB')
                 return
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
             self.camera.capture(os.path.join(self.the_path, current_pic_name), use_video_port=True, splitter_port=3, quality=85)
             print('[TL] A picture has been taken! (MD)')
+            return
+
+        if self.cam_opt['tl_exit']: # for testing
+            print('[TL] Finishing now')
+            if 'tl_active' in self.cam_opt['running']:
+                del self.cam_opt['running']['tl_active']
+            self.cam_opt['tl_exit'] = 0
             return
 
         #the code below is executed for taking several pictures (time lapse mode)
@@ -71,20 +77,22 @@ class Timelapse():
             startfrom = len(self.status[1])
             #for take in range(self.cam_opt['tl_nop'] - picstotake):
             for take in range(startfrom, picstotake):
-                '''checking for sufficient space on the disk'''
-                disk_space = shutil.disk_usage(self.the_path)
-                if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
-                    self.status[1].append('Free space on disk <= 200MB')
-                    self.cam_opt['tl_exit'] = True
-                    break
-                current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
-                self.camera.capture(os.path.join(self.status[0][take][1], current_pic_name), use_video_port=True, splitter_port=0, quality=85)
-                self.status[1].append(current_pic_name)
-                print('[TL] A pictures have been taken! (',take+1,')')
 
                 if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                     print('[TL] Received <exit> signal!')
                     break
+
+                '''checking for sufficient space on the disk'''
+                disk_space = shutil.disk_usage(self.the_path)
+                if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
+                    #self.status[1].append('Free space on disk <= 200MB')
+                    print('NOT ENOUGH SPACE ON DISK (<200MB)! SAVING PICTURES HAS STOPPED!')
+                    break
+
+                current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
+                self.camera.capture(os.path.join(self.status[0][take][1], current_pic_name), use_video_port=True, splitter_port=0, quality=85)
+                self.status[1].append(current_pic_name)
+                print('[TL] A pictures have been taken! (',take+1,')')
 
                 '''calculating the time of the next picture, I explain it later'''
                 if take < self.cam_opt['tl_nop']-1:
@@ -97,7 +105,6 @@ class Timelapse():
                             break
                         old_npdelta = np_delta
                         if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
-                            print('[TL] Received <exit> signal!')
                             break
 
         '''After time lapse is finished I want the <status> to be written to disk.'''
@@ -107,7 +114,7 @@ class Timelapse():
                 try:
                     filehnd = open(self.filename, 'a') #datetime.datetime.now().strftime("tl-status-%H.%M.%S.txt")), 'w')
                 except OSError as err:
-                    print("[TL] Can't Open a file! Error:", err)
+                    print("[TL] Can't Open the file! Error:", err)
                 else:
                     #try:
                         #filehnd.write(status)
@@ -119,6 +126,7 @@ class Timelapse():
                     filehnd.close()
             if 'tl_active' in self.cam_opt['running']:
                 del self.cam_opt['running']['tl_active']
+                self.cam_opt['tl_exit'] = 0
         return
 
     # def update_opts(self, cam_opt): #It might be needed for future features
@@ -139,7 +147,7 @@ class Timelapse():
     def add_jobs(self, tl_args):
         pass #I'll sort it out really soon (I want just one instance of TL to be running)
 
-def timelapse_start(path, camera, cam_opt, md=False): #Its used by threading, it will be redesigned in future
+def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
     timelapse_instance.start_now()
     return
