@@ -44,3 +44,5 @@ I'll give more details how to run the server soon. I will slowly start working m
 
 The project is being created on a Raspberry Pi Zero v1.3 with 1st gen. camera module.
 I promise I'll do the commits more frequently.
+
+I'll provide more info about the project soon (how to install, dependencies, what works and what doesn't and what you can expect in the future)
