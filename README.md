@@ -46,3 +46,5 @@ The project is being created on a Raspberry Pi Zero v1.3 with 1st gen. camera mo
 I promise I'll do the commits more frequently.
 
 I'll provide more info about the project soon (how to install, dependencies, what works and what doesn't and what you can expect in the future)
+
+(Do you think asyncio would be better than threading?)
