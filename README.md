@@ -27,7 +27,7 @@ A lot will change and it needs many improvements, but server works. There's a me
 
 To run the server you need to place the files in the same directory and start raspeye-srv.py with the port number like that:  
 ```
-_python3 raspeye.py 12345_
+python3 raspeye.py 12345
 ```  
 where 12345 is the port number the server is going to use (usually you need to set up port forwarding on your router). And yes - I am  developing it using _Python3_. Although you can test it __I don't recommend to run it__ if you don't know what you're doing (development of this project is in early stage!)
 
