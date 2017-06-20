@@ -34,6 +34,7 @@ class Timelapse():
                 self.status = [[], []]
                 self.filename = None
                 self.calculate_times()
+                jobs_added = True
 
 
     def calculate_times(self):#
@@ -75,37 +76,41 @@ class Timelapse():
             #picstotake = len(self.status[1])
             picstotake = self.cam_opt['tl_nop'] - len(self.status[1])
             startfrom = len(self.status[1])
-            #for take in range(self.cam_opt['tl_nop'] - picstotake):
-            for take in range(startfrom, picstotake):
+            while jobs_added:
+                jobs_added = False
+                #for take in range(self.cam_opt['tl_nop'] - picstotake):
+                for take in range(startfrom, picstotake):
 
-                if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
-                    print('[TL] Received <exit> signal!')
-                    break
+                    if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
+                        print('[TL] Received <exit> signal!')
+                        break
 
-                '''checking for sufficient space on the disk'''
-                disk_space = shutil.disk_usage(self.the_path)
-                if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
-                    #self.status[1].append('Free space on disk <= 200MB')
-                    print('NOT ENOUGH SPACE ON DISK (<200MB)! SAVING PICTURES HAS STOPPED!')
-                    break
+                    '''checking for sufficient space on the disk'''
+                    disk_space = shutil.disk_usage(self.the_path)
+                    if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
+                        #self.status[1].append('Free space on disk <= 200MB')
+                        print('NOT ENOUGH SPACE ON DISK (<200MB)! SAVING PICTURES HAS STOPPED!')
+                        break
 
-                current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
-                self.camera.capture(os.path.join(self.status[0][take][1], current_pic_name), use_video_port=True, splitter_port=0, quality=85)
-                self.status[1].append(current_pic_name)
-                print('[TL] A pictures have been taken! (',take+1,')')
+                    current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
+                    self.camera.capture(os.path.join(self.status[0][take][1], current_pic_name), use_video_port=True, splitter_port=0, quality=85)
+                    self.status[1].append(current_pic_name)
+                    print('[TL] A pictures have been taken! (',take+1,')')
 
-                '''calculating the time of the next picture, I explain it later'''
-                if take < self.cam_opt['tl_nop']-1:
-                    next_pic = self.status[0][take+1][0]
-                    np_delta = abs(datetime.datetime.today() - next_pic)
-                    old_npdelta = np_delta
-                    while abs(datetime.datetime.today() - next_pic) > self.time_res:
+                    '''calculating the time of the next picture, I explain it later'''
+                    if take < self.cam_opt['tl_nop']-1:
+                        next_pic = self.status[0][take+1][0]
                         np_delta = abs(datetime.datetime.today() - next_pic)
-                        if np_delta > old_npdelta:
-                            break
                         old_npdelta = np_delta
-                        if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
-                            break
+                        while abs(datetime.datetime.today() - next_pic) > self.time_res:
+                            np_delta = abs(datetime.datetime.today() - next_pic)
+                            if np_delta > old_npdelta:
+                                break
+                            old_npdelta = np_delta
+                            if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
+                                break
+                            if jobs_added:
+                                break
 
         '''After time lapse is finished I want the <status> to be written to disk.'''
         if not self.onepic:
@@ -146,6 +151,7 @@ class Timelapse():
 
     def add_jobs(self, tl_args):
         pass #I'll sort it out really soon (I want just one instance of TL to be running)
+        jobs_added = True
 
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
