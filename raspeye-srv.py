@@ -84,7 +84,7 @@ def validating_cam_opt(cam_opt_tmp):
         try:
             date0, time0 = t.split(' ')
             if '/' in date0:
-                 year0, month0, day0 = date0.split('/')
+                year0, month0, day0 = date0.split('/')
             elif '-' in date0:
                 year0, month0, day0 = date0.split('-')
             else:
@@ -288,7 +288,7 @@ while donotexit:
         # print('')
         #for _key in cam_opt:
         #    print(_key,':', cam_opt[_key])
-        if 'tl_active' in cam_opt['running']:
+        if 'tl_active' in cam_opt['running']: # ATM there's no way to add time lapse jobs (already implementing)
             cam_opt['tl_exit'] = True
         else:
             timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))

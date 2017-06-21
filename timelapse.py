@@ -33,21 +33,48 @@ class Timelapse():
                 self.time_res = datetime.timedelta(microseconds=10000)
                 self.status = [[], []]
                 self.filename = None
-                self.calculate_times()
+                self._calculate_times()
                 jobs_added = True
 
 
-    def calculate_times(self):#
+    def _calculate_times(self):#
         '''Creating time table for taking pictures.
             It includes creation the paths for pictures (it might be useful later on,
              especially when jobs will be added to the same file)
         '''
-        cur_time = datetime.datetime.today()
-        t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
-        cntr = 0
-        while cntr < self.cam_opt['tl_nop']:
-            self.status[0].append((cur_time + datetime.timedelta(seconds=self.cam_opt['tl_delay']*cntr), self.the_path))
-            cntr += 1
+        the_path = os.path.join(self.the_path, datetime.datetime.today())
+        if not os.path.isdir(the_path):
+            os.makedirs(the_path, exist_ok=True)
+        if len(self.status) == 0:
+            if self.cam_opt['tl_starts'] = 0:
+                start_time = datetime.datetime.today()
+            else:
+                start_time = self.cam_opt['tl_starts']
+            status_tmp = self.status
+        else:
+            status_tmp = [[], []] #It's 2 lists in a list (it could be just a list) to make it easier/shorter for now
+            t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
+            cntr = 0
+            while cntr < self.cam_opt['tl_nop']:
+                status_tmp[0].append((start_time + datetime.timedelta(seconds=self.cam_opt['tl_delay']*cntr), the_path))
+                cntr += 1
+            
+            #merging lists (new and old jobs)
+            place = 0
+            for time_ in self.status[0]:
+                if len(status_tmp[0]) > 0:
+                    if time_ > status_tmp[0]:
+                        if status_tmp[0] - datetime.datetime.today() > self.time_res:
+                            self.status[0].insert(place, (status_tmp[0], the_path))
+                        del status_tmp[0]
+                    place += 1
+                else:
+                    break
+            if len(status_tmp[0]) > 0:
+                for time_ in status_tmp: # .extend() can't be used as the paths need to be added
+                    if status_tmp[0] - datetime.datetime.today() > self.time_res:
+                        self.status[0].append((time_, the_path))
+            del status_tmp
 
     def start_now(self):
         '''The method starts the actual time lapse process.
@@ -110,6 +137,7 @@ class Timelapse():
                             if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                                 break
                             if jobs_added:
+                                self._calculate_times()
                                 break
 
         '''After time lapse is finished I want the <status> to be written to disk.'''
@@ -149,9 +177,10 @@ class Timelapse():
     def is_running(self): #unused
         return self.running
 
-    def add_jobs(self, tl_args):
+    def add_jobs(self, the_path):
         pass #I'll sort it out really soon (I want just one instance of TL to be running)
         jobs_added = True
+        self.the_path = the_path
 
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
