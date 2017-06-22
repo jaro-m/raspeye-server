@@ -29,19 +29,19 @@ To run the server you need to place the files in the same directory and start ra
 ```
 python3 raspeye.py 12345
 ```  
-where 12345 is the port number the server is going to use (usually you need to set up port forwarding on your router). And yes - I am  developing it using _Python3_. Although you can test it __I don't recommend to run it__ if you don't know what you're doing (development of this project is in early stage!)
+where 12345 is the port number the server is going to use (usually you need to set up port forwarding on your router). And yes - I am  developing it using _Python3_. As this project progress it gets more stable. You can test it if you've got a Raspberry Pi with a camera module.
 
-Soon I'll describe how to talk to the server (before I'll be able to finish the client) for curious ones, I'm just in process of changing it.
+As a client you can use _raspeye-guiz.py_ from the other repository.
 
 ---
-I know it's not easy to test/run it at the moment (especially without the client), but to install it you need the files to be in the same directory:
+I know it's not easy to test/run it at the moment , but to install it you need the files to be in the same directory:
 - raspeye-srv.py,
 - preview.py,
 - motion_detection.py,
 - timelapse.py,
 - constants.py
 
-I'll give more details how to run the server soon. I will slowly start working more on the client than the server, but the hole project still needs a lot of work.
+I will slowly start working more on the client than the server, but the hole project still needs improvements.
 
 The project is being created on a Raspberry Pi Zero v1.3 with 1st gen. camera module.
 I promise I'll do the commits more frequently.
