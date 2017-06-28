@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, json, socket, struct, picamera, threading, picamera.array, os, copy # time
+import sys, json, socket, struct, picamera, threading, picamera.array, os, copy, datetime # time
 import constants, preview, timelapse, motion_detection
 #from timeit import default_timer as timer
 
@@ -81,32 +81,34 @@ def validating_cam_opt(cam_opt_tmp):
         Output: returns False if conversion to 'datetime' object gives error
                 otherwise returns 'datetime' object
         """
-        try:
-            date0, time0 = t.split(' ')
-            if '/' in date0:
-                year0, month0, day0 = date0.split('/')
-            elif '-' in date0:
-                year0, month0, day0 = date0.split('-')
-            else:
-                return None
-            hour0, minute0 = time0.split(':')
-            year0 = int(year0)
-            month0 = int(month0)
-            day0 = int(day0)
-            hour0 = int(hour0)
-            minute0 = int(minute0)
-            thetime0 = (year0, month0, day0, hour0, minute0)
-            thetime = datetime.datetime(thetime0[0], thetime0[1], thetime0[2], thetime0[3], thetime0[4])
-        except:
-            return False
+        #try:
+        date0, time0 = t.split(' ')
+        if '/' in date0:
+            day0, month0, year0 = date0.split('/')
+        elif '-' in date0:
+            day0, month0, year0 = date0.split('-')
         else:
-            return thetime
+            return False
+        hour0, minute0 = time0.split(':')
+        year0 = int(year0)
+        month0 = int(month0)
+        day0 = int(day0)
+        hour0 = int(hour0)
+        minute0 = int(minute0)
+        thetime0 = (year0, month0, day0, hour0, minute0)
+        thetime = datetime.datetime(thetime0[0], thetime0[1], thetime0[2], thetime0[3], thetime0[4])
+        #except:
+        #    print("srv/exception!")
+        #    return False
+        #else:
+        return thetime
 
     global cam_opt
 
     # print('---Before:') # for debugging
     # for itm in cam_opt_tmp:
     #     print(itm, cam_opt_tmp[itm])
+    # print('---')
     if 'running' in cam_opt_tmp: # client can't change it directly!
         del cam_opt_tmp['running'] #it's used directly only on server-side
 
@@ -128,12 +130,13 @@ def validating_cam_opt(cam_opt_tmp):
                 cam_opt[key_] = cam_opt_tmp[key_]
         elif key_ == 'tl_starts':
             if cam_opt_tmp[key_] != 0:
-                if not validate_time(cam_opt_tmp[key_]):
-                    cam_opt[key_] = 0
-        elif key_ == 'tl_ends':
-            if cam_opt_tmp[key_] != 0:
-                if not validate_time(cam_opt_tmp[key_]):
-                    cam_opt[key_] = 0
+                tmpval = validate_time(cam_opt_tmp[key_])
+                if tmpval != 0:
+                    cam_opt[key_] = cam_opt_tmp[key_]
+        # elif key_ == 'tl_ends':
+        #     if cam_opt_tmp[key_] != 0:
+        #         if not validate_time(cam_opt_tmp[key_]):
+        #             cam_opt[key_] = 0
         elif key_ == 'tl_exit':
             #if cam_opt_tmp[key_] in constants.EXIT_VAL:
             cam_opt[key_] = cam_opt_tmp[key_]
@@ -189,6 +192,7 @@ def validating_cam_opt(cam_opt_tmp):
     # print('---After:') # for debugging
     # for itm in cam_opt:
     #     print(itm, cam_opt[itm])
+    # print('---')
     return
 
 def receive_opts():
@@ -286,10 +290,8 @@ while donotexit:
         # print('')
         # print('<Time Lapse> is starting')# time lapse need more work, but it should work
         # print('')
-        #for _key in cam_opt:
-        #    print(_key,':', cam_opt[_key])
         if 'tl_active' in cam_opt['running']: # ATM there's no way to add time lapse jobs (already implementing)
-            cam_opt['tl_exit'] = True
+            cam_opt['tl_req'] = 1
         else:
             timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
             timelapse_thread.start()

@@ -26,7 +26,8 @@ def preview_mode(conn, camera, cam_opt):
             if conn.sendall(flen) != None:
                 connection = False
                 break
-        except BrokenPipeError: #socket.timeout: #BrokenPipeError
+        except (BrokenPipeError, socket.timeout) as err:
+            print("Error occurred:", err)
             connection = False
             break
         preview_stream.seek(0)

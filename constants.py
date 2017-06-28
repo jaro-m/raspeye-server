@@ -1,6 +1,6 @@
 CAM_OPT_KEYS = {'tl_now', 'tl_delay', 'tl_nop', 'tl_starts', 'tl_ends',
 'tl_camres', 'tl_exit', 'md_exit', 'pr_exit', 'pr_camres', 'cam_res', 'cam_shtr_spd', 'cam_iso', 'cam_exp_mode',
-'cam_led', 'exit', 'running'}
+'cam_led', 'disk_full', 'exit', 'running'}
 
 TL_NOW_VAL = {0, 1, True, False}
 CAM_RES_MAXVAL = {2592: 1944, 1920: 1080}
@@ -18,7 +18,8 @@ CAM_OPT_DEFAULTS = {
 'tl_delay': 1,
 'tl_nop': 1,
 'tl_starts': 0,
-'tl_ends': 0,
+'tl_req': 0,
+'tl_path': "",
 'tl_camres': (640, 480),
 'tl_exit': False,
 'md_exit': False,
@@ -30,6 +31,7 @@ CAM_OPT_DEFAULTS = {
 'cam_exp_mode': 'auto',
 'cam_led': 0,
 'running': {},
+'disk_full': 0,
 'exit': False}
 
 RUNNING_KEYS = ("tl_active", "md_active", "pr_active")#probably obsolete
