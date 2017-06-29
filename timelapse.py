@@ -2,9 +2,21 @@
 
 import datetime, copy, shutil, os, picamera, json
 class Timelapse():
-    '''
+    '''Time lapse class used to controll taking pictures for 'time lapse' effect.
+        It only takes pictures at given time/frequency/number...
+        To have a proper 'time lapse' effect it the pictures have to be convert
+        into a video (it's not yet implemented)
     '''
     def __init__(self, raspeye_path, camera, cam_opt, md):
+        """At least 3 arguments are needed, the 4th is used by motion detecting module.
+            input:
+                - raspeye_path = the path to the program's path
+                - camera = picamera.PiCamera() instance
+                - cam_opt = a dictionary which controls the main program
+                    and its modules behaviour, it's also used for communication
+                    with Raspeye client.
+                - md = boolean, True when other modules use this class to take a picture
+        """
         self.raspeye_path = raspeye_path
         self.camera = camera
         self.cam_opt = cam_opt
@@ -55,11 +67,10 @@ class Timelapse():
         return
 
     def _calculate_times(self):
-        '''Creating time table for taking pictures.
+        '''Creating times table for taking pictures.
             It includes creation the paths for pictures (it might be useful later on,
              especially when jobs will be added to the same file)
         '''
-
         def _validate_time(t):
             try:
                 date0, time0 = t.split(' ')
@@ -85,87 +96,113 @@ class Timelapse():
                 else:
                     return 0
 
-        print('calculating times')
-        if self.cam_opt['tl_path'] != '':
-            the_path = os.path.join(self.raspeye_pth, 'timelapse', self.cam_opt['tl_path'])
-        else:
-            the_path = os.path.join(self.the_path, str(datetime.datetime.today()))
-        if not os.path.isdir(the_path):
-            os.makedirs(the_path, exist_ok=True)
-
-        if len(self.status) == 0:
-            if self.cam_opt['tl_starts'] == 0:
-                if self.cam_opt['tl_now'] == 0:
-                    self.cam_opt['tl_exit'] = 1
-                    return
-                start_time = datetime.datetime.today()
-            else:
-                start_time = _validate_time(self.cam_opt['tl_starts'])
-                if start_time == 0:
-                    print("invalid 'tl_starts' time")
-                    return
-            print("tl_starts:", start_time)
-            #status_tmp = self.status[0]
-        else:
-            if self.cam_opt['tl_starts'] == 0:
-                start_time = datetime.datetime.today() + self.time_res
-            else:
-                start_time = _validate_time(self.cam_opt['tl_starts'])
-                if start_time == 0:
-                    return
-
-        status_tmp = []
-        t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
-        cntr = 0
-        while cntr < self.cam_opt['tl_nop']:
-            status_tmp.append((start_time + t_delta * cntr, the_path))
-            cntr += 1
-
-        if len(self.status) != 0:
-
-            print("printing 'status_tmp':")
-            for el in status_tmp:
-                print(el)
-
-            print('')
-            print("printing 'self.status':")
-            for el in self.status:
-                print(el[0])
-            print('')
-
-
+        def _merge_times_lists(list1, list2):
+            """Merging lists of tuples. Each tuple contain:
+                    (datetime-object, path_to_a_directory), as
+                    (datetime-object, string)
+                input:
+                    2 lists of the same type (but may be of different length)
+                output:
+                    returns a new list
+                    sorted according to the time in datetime-object in those lists
+            """
 
             #merging lists (new and old jobs)
-            tmp_list = []
-            for time_ in self.status:
+            tmp_lst = []
+            for item1 in list1:
                 cntr = 0
-                for time_tmp in status_tmp:
-                    #print("checking", time_[0], "and", time_tmp[0])
-
-                    if time_[0] > time_tmp[0]:
+                for item2 in list2:
+                    if item1[0] > item2[0]:
                         cntr += 1
-                        #if status_tmp[0][0] - datetime.datetime.today() > self.time_res:
-                        tmp_list.append(time_tmp) #, the_path))
-                    else:
-                        status_tmp = status_tmp[cntr:]
+                        #if list2[0][0] - datetime.datetime.today() > self.time_res:
+                        tmp_lst.append(item2)
+                    elif item1[0] == item2[0]:
+                        cntr += 1
+                        tmp_lst.append(item1)
+                        tmp_lst.append(item2)
+                        list2 = list2[cntr:]
                         break
-                tmp_list.append(time_)
+                    else:
+                        list2 = list2[cntr:]
+                        tmp_lst.append(item1)
+                        break
+                if cntr == len(list2):
+                    list2 = []
 
-            self.status = copy.copy(tmp_list)
-        else:
-            self.status = copy.copy(status_tmp)
+            #if the list2 is not empty then append it to list1
+            if list2 != []:
+                tmp_lst.extend(list2)
 
-        if status_tmp != []:
-            for time_tmp in status_tmp:
-                self.status.append(time_tmp)
+            print("Printing the merged list...")
+            print(len(tmp_lst))
+            for el in tmp_lst:
+                print(el)
+            return tmp_lst
 
-        print(len(self.status))
-        for el in self.status:
-            print(el[0])
-        return
+        def _create_times_list():
+            """Creates a list of tuples (datetime-object, a_path_to_a_directory)
+                    It uses self.cam_opt values:
+                    'tl_now', 'tl_nop', 'tl_starts', 'tl_delay' and 'tl_path'
+                input:
+                    none
+                output:
+                    a list
+            """
+
+            if self.cam_opt['tl_path'] != '':
+                the_path = os.path.join(self.raspeye_pth, 'timelapse', self.cam_opt['tl_path'])
+            else:
+                the_path = os.path.join(self.the_path, str(datetime.datetime.today()))
+            if not os.path.isdir(the_path):
+                os.makedirs(the_path, exist_ok=True)
+
+            if len(self.status) == 0:
+                if self.cam_opt['tl_starts'] == 0:
+                    if self.cam_opt['tl_now'] == 0:
+                        self.cam_opt['tl_exit'] = 1
+                        return
+                    start_time = datetime.datetime.today()
+                else:
+                    start_time = _validate_time(self.cam_opt['tl_starts'])
+                    if start_time == 0:
+                        print("invalid 'tl_starts' time")
+                        return
+                print("tl_starts:", start_time)
+                #temp_list = self.status[0]
+            else:
+                if self.cam_opt['tl_starts'] == 0:
+                    start_time = datetime.datetime.today() + self.time_res
+                else:
+                    start_time = _validate_time(self.cam_opt['tl_starts'])
+                    if start_time == 0:
+                        return
+
+            temp_list = []
+            t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
+            cntr = 0
+            while cntr < self.cam_opt['tl_nop']:
+                temp_list.append((start_time + t_delta * cntr, the_path))
+                cntr += 1
+
+            if len(self.status) != 0:
+
+                print("printing 'self.status':")
+                for el in self.status:
+                    print(el[0], "---------")
+
+                print('')
+                print("printing 'temp_list':")
+                for el in temp_list:
+                    print("---------", el[0])
+                print('')
+
+
+            return _merge_times_lists(self.status, temp_list)
+
+        self.status = _create_times_list()
 
     def start_now(self):
-        '''The method starts the actual time lapse process.
+        '''The main method, starts the actual time lapse process.
         '''
         def _take_picture(tl_path):
 
@@ -180,33 +217,29 @@ class Timelapse():
                 return
 
             #taking a picture
+            if self.onepic:
+                spl_port = 3
+            else:
+                spl_port = 0
+
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
-            self.camera.capture(os.path.join(tl_path, current_pic_name),
-                                use_video_port=True,
-                                splitter_port=0,
-                                quality=85)
-            print('[TL] A picture has been taken!')
+            print("the pic", current_pic_name, "will sit in:", tl_path)
+            print("is there such a directory there?:", os.path.isdir(tl_path))
+            if self.onepic:
+                self.camera.capture(os.path.join(tl_path, current_pic_name),
+                                    use_video_port=True,
+                                    splitter_port=spl_port,
+                                    quality=85)
+            if self.onepic:
+                print('[TL] A picture has been taken! (MD)')
+            else:                
+                print('[TL] A picture has been taken!')
             return
 
         #the code below is executed by motion detecting module (separate thread)
         if self.onepic: #if motion detection module needs a pic this will provide it
-
-            #checking for sufficient space on the disk
-            disk_space = shutil.disk_usage(self.the_path)
-            if disk_space[2]//1048576 < 200: # leave at least 200MB of free disk space
-                self.cam_opt['disk_full'] = 1
-                self.cam_opt['tl_exit'] = 1
-                return
-            current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
-            self.camera.capture(os.path.join(self.the_path,
-                                            current_pic_name),
-                                            use_video_port=True,
-                                            splitter_port=3,
-                                            quality=85)
-            print('[TL] A picture has been taken! (MD)')
+            _take_picture(self.the_path)
             return
-
-
 
         # for key, val in self.cam_opt.items(): # testing
         #     print(key, val)
@@ -221,18 +254,16 @@ class Timelapse():
         #the code below is executed for taking several pictures (time lapse mode)
         while self.jobs_added:
             self.jobs_added = False
-            print('in a while loop')
             #for take in range(self.cam_opt['tl_nop'] - picstotake):
-            num_of_pic_to_take = len (self.status)
+            num_of_pic_to_take = len(self.status)
             for take in range(0, num_of_pic_to_take):
-                print('in a for loop')
                 if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                     print('[TL] Received <exit> signal!')
                     break
 
-                if self.cam_opt['tl_now']:
-                    _take_picture(self.status[take][1])
-                    continue
+                #if self.cam_opt['tl_now']:
+                #    _take_picture(self.status[take][1])
+                #    continue
 
                 #calculating the time of the next picture, it'll be explained later
                 if take < self.cam_opt['tl_nop']-1:
@@ -241,7 +272,6 @@ class Timelapse():
                     next_pic = self.status[-1][0]
                 np_delta = abs(datetime.datetime.today() - next_pic)
                 old_npdelta = np_delta
-                print('entering second while loop')
                 while abs(datetime.datetime.today() - next_pic) > self.time_res:
                     #print("to next picture:", np_delta)
                     np_delta = abs(datetime.datetime.today() - next_pic)
@@ -255,7 +285,6 @@ class Timelapse():
                         self.cam_opt['tl_req'] = 0
                         self._calculate_times()
                         break
-                print('...taking a pic...')
                 _take_picture(self.status[take][1])
 
 
@@ -269,10 +298,6 @@ class Timelapse():
                 self.cam_opt['tl_exit'] = 0
         return
 
-    # def update_opts(self, cam_opt): #It might be needed for future features
-    #     '''this method is for future features (probably it won't be needed)'''
-    #     self.cam_opt_copy = copy.copy(cam_opt)
-    #     return
 
     def get_status(self):
         tmp_list = []
@@ -284,10 +309,6 @@ class Timelapse():
     def is_running(self): #unused
         return self.running
     
-    #def add_jobs(self, the_path): #BAD IDEA!
-    #    pass #I'll sort it out really soon (I want just one instance of TL to be running)
-    #    self.jobs_added = True
-    #    self.the_path = the_path
 
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
