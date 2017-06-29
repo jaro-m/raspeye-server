@@ -74,7 +74,7 @@ def validating_cam_opt(cam_opt_tmp):
     Output: returns the same object if all was OK otherwise leaves out all 'bad' bits
     """
 
-    def validate_time(t):# needs improving/extending <---soon obsolete
+    def _validate_time(t):# needs improving/extending <---soon obsolete
         """Helper function for validating_cam_opt
 
         Input: t - string object
@@ -130,7 +130,7 @@ def validating_cam_opt(cam_opt_tmp):
                 cam_opt[key_] = cam_opt_tmp[key_]
         elif key_ == 'tl_starts':
             if cam_opt_tmp[key_] != 0:
-                tmpval = validate_time(cam_opt_tmp[key_])
+                tmpval = _validate_time(cam_opt_tmp[key_])
                 if tmpval != 0:
                     cam_opt[key_] = cam_opt_tmp[key_]
         # elif key_ == 'tl_ends':

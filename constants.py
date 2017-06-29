@@ -14,24 +14,25 @@ EXIT_VAL = (True, False, 1, 0)
 #ACTION_VAL = ('preview', 'mo_detect', 'timelapse')
 
 CAM_OPT_DEFAULTS = {
-'tl_now': 0,
-'tl_delay': 1,
-'tl_nop': 1,
-'tl_starts': 0,
-'tl_req': 0,
-'tl_path': "",
-'tl_camres': (640, 480),
-'tl_exit': False,
-'md_exit': False,
-'pr_exit': False,
-'pr_camres': (640, 480),
-'cam_res': (540, 405),
-'cam_shtr_spd': 0,
-'cam_iso': 0,
-'cam_exp_mode': 'auto',
-'cam_led': 0,
-'running': {},
-'disk_full': 0,
-'exit': False}
+    'tl_now': 0,
+    'tl_delay': 1,
+    'tl_nop': 1,
+    'tl_starts': 0,
+    'tl_req': 0,
+    'tl_path': "",
+    'tl_camres': (640, 480),
+    'tl_exit': False,
+    'md_exit': False,
+    'pr_exit': False,
+    'pr_camres': (640, 480),
+    'cam_res': (540, 405),
+    'cam_shtr_spd': 0,
+    'cam_iso': 0,
+    'cam_exp_mode': 'auto',
+    'cam_led': 0,
+    'running': {},
+    'disk_full': 0,
+    'exit': False
+    }
 
 RUNNING_KEYS = ("tl_active", "md_active", "pr_active")#probably obsolete
