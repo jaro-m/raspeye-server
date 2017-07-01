@@ -225,8 +225,7 @@ class Timelapse():
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
             print("the pic", current_pic_name, "will sit in:", tl_path)
             print("is there such a directory there?:", os.path.isdir(tl_path))
-            if self.onepic:
-                self.camera.capture(os.path.join(tl_path, current_pic_name),
+            self.camera.capture(os.path.join(tl_path, current_pic_name),
                                     use_video_port=True,
                                     splitter_port=spl_port,
                                     quality=85)
@@ -256,7 +255,13 @@ class Timelapse():
             self.jobs_added = False
             #for take in range(self.cam_opt['tl_nop'] - picstotake):
             num_of_pic_to_take = len(self.status)
-            for take in range(0, num_of_pic_to_take):
+            for take in range(num_of_pic_to_take):
+
+                if datetime.datetime.today() > self.status[take][0]:
+                    print("continue")
+                    continue
+
+                print("Next is:", take)
                 if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                     print('[TL] Received <exit> signal!')
                     break
@@ -266,7 +271,7 @@ class Timelapse():
                 #    continue
 
                 #calculating the time of the next picture, it'll be explained later
-                if take < self.cam_opt['tl_nop']-1:
+                if take < num_of_pic_to_take-1:
                     next_pic = self.status[take+1][0]
                 else:
                     next_pic = self.status[-1][0]
@@ -285,7 +290,8 @@ class Timelapse():
                         self.cam_opt['tl_req'] = 0
                         self._calculate_times()
                         break
-                _take_picture(self.status[take][1])
+                if not self.cam_opt['tl_exit'] or not self.cam_opt['tl_req']:
+                    _take_picture(self.status[take][1])
 
 
         '''After time lapse is finished I want the <status> to be written to disk.'''
@@ -296,6 +302,8 @@ class Timelapse():
             if 'tl_active' in self.cam_opt['running']:
                 del self.cam_opt['running']['tl_active']
                 self.cam_opt['tl_exit'] = 0
+
+        print("Time lapse's done")
         return
 
 
