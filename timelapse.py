@@ -41,7 +41,7 @@ class Timelapse():
                 else:
                     fh.close()
             self.time_res = datetime.timedelta(microseconds=10000)
-            self.status = []
+            self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
             self.filename = None
             self._calculate_times()
             self.jobs_added = True
@@ -111,29 +111,31 @@ class Timelapse():
             tmp_lst = []
             for item1 in list1:
                 cntr = 0
-                for item2 in list2:
-                    if item1[0] > item2[0]:
-                        cntr += 1
-                        #if list2[0][0] - datetime.datetime.today() > self.time_res:
-                        tmp_lst.append(item2)
-                    elif item1[0] == item2[0]:
-                        cntr += 1
-                        tmp_lst.append(item1)
-                        tmp_lst.append(item2)
-                        list2 = list2[cntr:]
-                        break
+                if list2 != []:
+                    for item2 in list2:
+                        if item1[0] > item2[0]:
+                            cntr += 1
+                            tmp_lst.append(item2)
+                        elif item1[0] == item2[0]:
+                            cntr += 1
+                            tmp_lst.append(item1)
+                            tmp_lst.append(item2)
+                            break
+                        else:
+                            tmp_lst.append(item1)
+                            break
                     else:
-                        list2 = list2[cntr:]
                         tmp_lst.append(item1)
-                        break
-                if cntr == len(list2):
-                    list2 = []
+                    list2 = list2[cntr:]
+                else:
+                    tmp_lst.append(item1)
 
             #if the list2 is not empty then append it to list1
             if list2 != []:
+                print("list2 is not empty yet")
                 tmp_lst.extend(list2)
 
-            print("Printing the merged list...")
+            print("Printing the merged list...") # just for testing
             print(len(tmp_lst))
             for el in tmp_lst:
                 print(el)
@@ -158,17 +160,15 @@ class Timelapse():
 
             if len(self.status) == 0:
                 if self.cam_opt['tl_starts'] == 0:
-                    if self.cam_opt['tl_now'] == 0:
-                        self.cam_opt['tl_exit'] = 1
-                        return
+                    # if self.cam_opt['tl_now'] == 0:
+                    #     self.cam_opt['tl_exit'] = 1
+                    #     return
                     start_time = datetime.datetime.today()
                 else:
                     start_time = _validate_time(self.cam_opt['tl_starts'])
-                    if start_time == 0:
+                    if not start_time:
                         print("invalid 'tl_starts' time")
                         return
-                print("tl_starts:", start_time)
-                #temp_list = self.status[0]
             else:
                 if self.cam_opt['tl_starts'] == 0:
                     start_time = datetime.datetime.today() + self.time_res
@@ -184,20 +184,22 @@ class Timelapse():
                 temp_list.append((start_time + t_delta * cntr, the_path))
                 cntr += 1
 
-            if len(self.status) != 0:
+            #if len(self.status) != 0:
 
-                print("printing 'self.status':")
-                for el in self.status:
-                    print(el[0], "---------")
+            print("printing 'self.status':")
+            for el in self.status:
+                print(el[0], "---------")
 
-                print('')
-                print("printing 'temp_list':")
-                for el in temp_list:
-                    print("---------", el[0])
-                print('')
+            print('')
+            print("printing 'temp_list':")
+            for el in temp_list:
+                print("---------", el[0])
+            print('')
 
-
-            return _merge_times_lists(self.status, temp_list)
+            if self.status:
+                return _merge_times_lists(self.status, temp_list)
+            else:
+                return temp_list
 
         self.status = _create_times_list()
 
@@ -231,7 +233,7 @@ class Timelapse():
                                     quality=85)
             if self.onepic:
                 print('[TL] A picture has been taken! (MD)')
-            else:                
+            else:
                 print('[TL] A picture has been taken!')
             return
 
@@ -240,87 +242,75 @@ class Timelapse():
             _take_picture(self.the_path)
             return
 
-        # for key, val in self.cam_opt.items(): # testing
-        #     print(key, val)
-
-        if self.cam_opt['tl_exit']: # for testing
-            print('[TL] Finishing now')
-            if 'tl_active' in self.cam_opt['running']:
-                del self.cam_opt['running']['tl_active']
-            self.cam_opt['tl_exit'] = 0
-            return
-
         #the code below is executed for taking several pictures (time lapse mode)
         while self.jobs_added:
             self.jobs_added = False
-            #for take in range(self.cam_opt['tl_nop'] - picstotake):
+
+            #eliminating entries with the time that's passed
+            cn = 0
+            for el in self.status:
+                if el[0] < datetime.datetime.today():
+                    cn += 1
+                else:
+                    break
+            self.status = self.status[cn:]
+            status_copy = copy.copy(self.status)
+
             num_of_pic_to_take = len(self.status)
+            print("number of pictures to take:", num_of_pic_to_take)
             for take in range(num_of_pic_to_take):
 
-                if datetime.datetime.today() > self.status[take][0]:
-                    print("continue")
-                    continue
-
-                print("Next is:", take)
-                if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
-                    print('[TL] Received <exit> signal!')
-                    break
-
-                #if self.cam_opt['tl_now']:
-                #    _take_picture(self.status[take][1])
-                #    continue
+                print("Next pic:", take+1)
 
                 #calculating the time of the next picture, it'll be explained later
                 if take < num_of_pic_to_take-1:
                     next_pic = self.status[take+1][0]
                 else:
                     next_pic = self.status[-1][0]
-                np_delta = abs(datetime.datetime.today() - next_pic)
-                old_npdelta = np_delta
-                while abs(datetime.datetime.today() - next_pic) > self.time_res:
-                    #print("to next picture:", np_delta)
-                    np_delta = abs(datetime.datetime.today() - next_pic)
-                    if np_delta > old_npdelta:
-                        break
-                    old_npdelta = np_delta
+
+                while next_pic - datetime.datetime.today() > self.time_res:
                     if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                         break
                     if self.cam_opt['tl_req']:
-                        self.job_added = 1
-                        self.cam_opt['tl_req'] = 0
-                        self._calculate_times()
                         break
-                if not self.cam_opt['tl_exit'] or not self.cam_opt['tl_req']:
-                    _take_picture(self.status[take][1])
 
+                if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
+                    print('[TL] Received <exit> signal!')
+                    break
+                if self.cam_opt['tl_req']:
+                    self.cam_opt['tl_req'] = 0
+                    self.jobs_added = 1
+                    self.status = status_copy
+                    self._calculate_times()
+                    status_copy = copy.copy(self.status)
+                    break
 
-        '''After time lapse is finished I want the <status> to be written to disk.'''
-        if not self.onepic:
-            status = self.get_status()
-            #self._save_file(status)
+                _take_picture(self.status[take][1])
+                status_copy = status_copy[take+1:]
 
-            if 'tl_active' in self.cam_opt['running']:
-                del self.cam_opt['running']['tl_active']
-                self.cam_opt['tl_exit'] = 0
+        if 'tl_active' in self.cam_opt['running']:
+            del self.cam_opt['running']['tl_active']
+            self.cam_opt['tl_exit'] = 0
 
         print("Time lapse's done")
         return
 
-
     def get_status(self):
+        """Swapping datetime objects with strings.
+        """
         tmp_list = []
         for item in range(len(self.status)):
-            tmp_list.append((str(self.status[item][0].strftime("%H.%M.%S_%Y-%m-%d")), self.status[item][1]))
-        #str_status = str([tmp_list, self.status[1]])
+            tmp_list.append((str(self.status[item][0].strftime("%H.%M.%S_%Y-%m-%d")),
+                            self.status[item][1]))
         return tmp_list
 
-    def is_running(self): #unused
-        return self.running
-    
 
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
+    """Starting threading.
+    """
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
     timelapse_instance.start_now()
+    print("it's really done now!")
     return
 
 if __name__ == '__main__':

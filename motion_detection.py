@@ -44,10 +44,10 @@ class SimpleMotionDetection():
         self.update_path()
         self.timedelta = datetime.timedelta(seconds=1)
         self.lastpic = datetime.datetime.now()
-        DIR_NAME = 'md-pictures'
+        self.DIR_NAME = 'md-pictures'
 
     def update_path(self):
-        the_path = os.path.join(self.raspeye_path, DIR_NAME, self.theday)
+        the_path = os.path.join(self.raspeye_path, self.DIR_NAME, self.theday)
         if not os.path.isdir(the_path):
             os.makedirs(the_path, exist_ok=True)
         self.thepath = the_path
