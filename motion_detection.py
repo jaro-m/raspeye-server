@@ -29,7 +29,7 @@ class SimpleMotionDetection():
     '''
 
     def __init__(self, camera, connection, camera_options, raspeye_path):
-        import os
+        import os, constants
         self.camera = camera
         self.conn = connection
         self.cam_opt = camera_options
@@ -41,10 +41,10 @@ class SimpleMotionDetection():
             filehnd.close()
         self.theday = datetime.date.today().isoformat()
         self.thefile = the_file
+        self.DIR_NAME = constants.MD_DIR_NAME
         self.update_path()
         self.timedelta = datetime.timedelta(seconds=1)
         self.lastpic = datetime.datetime.now()
-        self.DIR_NAME = 'md-pictures'
 
     def update_path(self):
         the_path = os.path.join(self.raspeye_path, self.DIR_NAME, self.theday)

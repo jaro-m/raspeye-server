@@ -36,3 +36,5 @@ CAM_OPT_DEFAULTS = {
     }
 
 RUNNING_KEYS = ("tl_active", "md_active", "pr_active")#probably obsolete
+
+MD_DIR_NAME = "md-pictures"

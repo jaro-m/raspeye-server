@@ -247,6 +247,8 @@ class Timelapse():
             self.jobs_added = False
 
             #eliminating entries with the time that's passed
+            if self.status == []:
+                return
             cn = 0
             for el in self.status:
                 if el[0] < datetime.datetime.today():
@@ -256,19 +258,23 @@ class Timelapse():
             self.status = self.status[cn:]
             status_copy = copy.copy(self.status)
 
+            print("a list of pics to take...")
+            for itr in self.status:
+                print(itr)
+
             num_of_pic_to_take = len(self.status)
             print("number of pictures to take:", num_of_pic_to_take)
-            for take in range(num_of_pic_to_take):
+            for next_pic in range(num_of_pic_to_take):
 
-                print("Next pic:", take+1)
+                print("Next pic:", next_pic+1)
 
                 #calculating the time of the next picture, it'll be explained later
-                if take < num_of_pic_to_take-1:
-                    next_pic = self.status[take+1][0]
-                else:
-                    next_pic = self.status[-1][0]
+                # if take < num_of_pic_to_take-1:
+                #     next_pic = self.status[take+1][0]
+                # else:
+                #     next_pic = self.status[-1][0]
 
-                while next_pic - datetime.datetime.today() > self.time_res:
+                while self.status[next_pic][0] - datetime.datetime.today() > self.time_res:
                     if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                         break
                     if self.cam_opt['tl_req']:
@@ -285,8 +291,8 @@ class Timelapse():
                     status_copy = copy.copy(self.status)
                     break
 
-                _take_picture(self.status[take][1])
-                status_copy = status_copy[take+1:]
+                _take_picture(self.status[next_pic][1])
+                status_copy = status_copy[next_pic+1:]
 
         if 'tl_active' in self.cam_opt['running']:
             del self.cam_opt['running']['tl_active']
