@@ -4,7 +4,7 @@ _RaspEye_ is a result of playing with Raspberry Pi Zero with a camera module for
 
 [_Raspeye_](https://github.com/usrbit/raspeye) is a client.
 
-This is the server.
+This is the server. This is still quite a new project and you can spot lots of _imperfections_ that I'm aware of. I will clean the code up, although I have little time for developing this project, so the progress won't be fast, but should be stable.
 
 
 ### _raspeye-srv_
@@ -19,8 +19,6 @@ _Motion detection_ is going to work continuously with ability to terminate it an
 _Time lapse_ can be set up to start at a certain date and time.  
 _Preview_ mode is limited to 1 client at the moment, but it will change in future.
 
-The code will change a lot, it's just the beginning.
-I might change everything (API to algorithms) and add lots of features.
 I'm going to make a separate development branch so the code in the master branch should stay usable. The master branch should always have the tested code that should run on any Raspberry Pi.
 
 To run the server you need to place the files in the same directory and start raspeye-srv.py with the port number like that:  
@@ -28,6 +26,12 @@ To run the server you need to place the files in the same directory and start ra
 python3 raspeye.py 12345
 ```  
 where 12345 is the port number the server is going to use (usually you need to set up port forwarding on your router).
+
+Dependencies:
+- numpy (motion detection)
+- picamera
+- and modules from standard library like: threading, socket, datetime, json, struct,...
+
 
 As a client you can use _raspeye-guiz.py_ from the other repository.
 
