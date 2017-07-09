@@ -131,14 +131,14 @@ class Timelapse():
                     tmp_lst.append(item1)
 
             #if the list2 is not empty then append it to list1
-            if list2 != []:
-                print("list2 is not empty yet")
-                tmp_lst.extend(list2)
-
-            print("Printing the merged list...") # just for testing
-            print(len(tmp_lst))
-            for el in tmp_lst:
-                print(el)
+            # if list2 != []:
+            #     print("list2 is not empty yet")
+            tmp_lst.extend(list2)
+            #pprint(tmp_lst)
+            # print("Printing the merged list...") # just for testing
+            # print(len(tmp_lst))
+            # for el in tmp_lst:
+            #     print(el)
             return tmp_lst
 
         def _create_times_list():
@@ -186,15 +186,17 @@ class Timelapse():
 
             #if len(self.status) != 0:
 
-            print("printing 'self.status':")
-            for el in self.status:
-                print(el[0], "---------")
+            #print("printing 'self.status':")
+            #pprint(self.status)
+            #for el in self.status:
+            #    print(el[0], "---------")
 
-            print('')
-            print("printing 'temp_list':")
-            for el in temp_list:
-                print("---------", el[0])
-            print('')
+            #print('')
+            #print("printing 'temp_list':")
+            #ppritn(temp_list)
+            # for el in temp_list:
+            #     print("---------", el[0])
+            #print('')
 
             if self.status:
                 return _merge_times_lists(self.status, temp_list)
@@ -225,8 +227,7 @@ class Timelapse():
                 spl_port = 0
 
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
-            print("the pic", current_pic_name, "will sit in:", tl_path)
-            print("is there such a directory there?:", os.path.isdir(tl_path))
+            print("the pic {} will be saved to {}".format(current_pic_name, tl_path))
             self.camera.capture(os.path.join(tl_path, current_pic_name),
                                     use_video_port=True,
                                     splitter_port=spl_port,
@@ -258,9 +259,10 @@ class Timelapse():
 
             num_of_pic_to_take = len(self.status)
             print("number of pictures to take:", num_of_pic_to_take)
+            print("Time lapse should be finished at {!s}".format(self.status[-1][0]))
             for take in range(num_of_pic_to_take):
 
-                print("Next pic:", take+1)
+                print("Next pic: {} of {}".format(take+1, num_of_pic_to_take))
 
                 #calculating the time of the next picture, it'll be explained later
                 if take < num_of_pic_to_take-1:
@@ -310,7 +312,6 @@ def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, i
     """
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
     timelapse_instance.start_now()
-    print("it's really done now!")
     return
 
 if __name__ == '__main__':
