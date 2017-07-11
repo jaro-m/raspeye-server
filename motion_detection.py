@@ -59,7 +59,12 @@ class SimpleMotionDetection():
         filehnd.close()
         if datetime.datetime.now() >= self.lastpic + self.timedelta:
             self.lastpic = datetime.datetime.now()
-            timelapse.timelapse_start(self.thepath, self.camera, self.cam_opt, md=True)
+            #timelapse.timelapse_start(self.thepath, self.camera, self.cam_opt, md=True)
+            current_pic_name = self.lastpic.strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
+            self.camera.capture(os.path.join(self.thepath, current_pic_name),
+                                use_video_port=True,
+                                splitter_port=3,
+                                quality=85)
         return
 
 
