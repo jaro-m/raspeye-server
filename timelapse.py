@@ -22,29 +22,28 @@ class Timelapse():
         self.cam_opt = cam_opt
         if self.cam_opt['disk_full']:
             self.cam_opt['tl_exit'] = 1
-        #self.cam_opt_copy = copy.copy(cam_opt) #I think I'll need it'
-        self.onepic = md
-        if self.onepic:
-            self.the_path = raspeye_path
-        else:
-            self.cam_opt['running']['tl_active'] = 1
-            the_path = os.path.join(self.raspeye_path, 'timelapse')
-            if not os.path.isdir(the_path):
-                os.makedirs(the_path, exist_ok=True)
-            self.the_path = the_path
-            self.filename = os.path.join(self.the_path, 'timelapse.txt')
-            if not os.path.isfile(self.filename):
-                try:
-                    fh = open(self.filename, 'w')
-                except OSError as err:
-                    print("[TL] Error occurred during creation of 'timelapse.txt' file:\n", err)
-                else:
-                    fh.close()
-            self.time_res = datetime.timedelta(microseconds=10000)
-            self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
-            self.filename = None
-            self._calculate_times()
-            self.jobs_added = True
+        #self.onepic = md
+        #if self.onepic:
+        #    self.the_path = raspeye_path
+        #else:
+        self.cam_opt['running']['tl_active'] = 1
+        the_path = os.path.join(self.raspeye_path, 'timelapse')
+        if not os.path.isdir(the_path):
+            os.makedirs(the_path, exist_ok=True)
+        self.the_path = the_path
+        self.filename = os.path.join(self.the_path, 'timelapse.txt')
+        if not os.path.isfile(self.filename):
+            try:
+                fh = open(self.filename, 'w')
+            except OSError as err:
+                print("[TL] Error occurred during creation of 'timelapse.txt' file:\n", err)
+            else:
+                fh.close()
+        self.time_res = datetime.timedelta(microseconds=10000)
+        self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
+        self.filename = None
+        self._calculate_times()
+        self.jobs_added = True
 
     def _save_file(self, f2w, thename):
         if f2w != None:
@@ -268,12 +267,6 @@ class Timelapse():
 
                 print("Next pic:", next_pic+1)
 
-                #calculating the time of the next picture, it'll be explained later
-                # if take < num_of_pic_to_take-1:
-                #     next_pic = self.status[take+1][0]
-                # else:
-                #     next_pic = self.status[-1][0]
-
                 while self.status[next_pic][0] - datetime.datetime.today() > self.time_res:
                     if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                         break
@@ -301,6 +294,8 @@ class Timelapse():
         print("Time lapse's done")
         return
 
+
+    @property
     def get_status(self):
         """Swapping datetime objects with strings.
         """
@@ -316,7 +311,6 @@ def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, i
     """
     timelapse_instance = Timelapse(path, camera, cam_opt, md)
     timelapse_instance.start_now()
-    print("it's really done now!")
     return
 
 if __name__ == '__main__':
