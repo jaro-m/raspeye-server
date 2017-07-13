@@ -7,7 +7,7 @@ class Timelapse():
         To have a proper 'time lapse' effect it the pictures have to be convert
         into a video (it's not yet implemented)
     '''
-    def __init__(self, raspeye_path, camera, cam_opt, md):
+    def __init__(self, raspeye_path, camera, cam_opt):
         """At least 3 arguments are needed, the 4th is used by motion detecting module.
             input:
                 - raspeye_path = the path to the program's path
@@ -15,7 +15,6 @@ class Timelapse():
                 - cam_opt = a dictionary which controls the main program
                     and its modules behaviour, it's also used for communication
                     with Raspeye client.
-                - md = boolean, True when other modules use this class to take a picture
         """
         self.raspeye_path = raspeye_path
         self.camera = camera
@@ -27,11 +26,19 @@ class Timelapse():
         #    self.the_path = raspeye_path
         #else:
         self.cam_opt['running']['tl_active'] = 1
+        self.time_res = datetime.timedelta(microseconds=10000)
+        self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
+        self.the_path = _set_thepath()
+        self._calculate_times()
+        self.filename = None
+        self.jobs_added = True
+
+    def _set_thepath():
         the_path = os.path.join(self.raspeye_path, 'timelapse')
         if not os.path.isdir(the_path):
             os.makedirs(the_path, exist_ok=True)
-        self.the_path = the_path
-        self.filename = os.path.join(self.the_path, 'timelapse.txt')
+        #self.the_path = the_path
+        self.filename = os.path.join(the_path, 'timelapse.txt')
         if not os.path.isfile(self.filename):
             try:
                 fh = open(self.filename, 'w')
@@ -39,13 +46,9 @@ class Timelapse():
                 print("[TL] Error occurred during creation of 'timelapse.txt' file:\n", err)
             else:
                 fh.close()
-        self.time_res = datetime.timedelta(microseconds=10000)
-        self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
-        self.filename = None
-        self._calculate_times()
-        self.jobs_added = True
+        return (the_path)
 
-    def _save_file(self, f2w, thename):
+    def _save_file(self, f2w, thename): # not used at the moment (it'll be redesigned)
         if f2w != None:
             if not os.path.isdir(os.path.dirname(thename)): #self.filename != None:
                 os.makedirs(os.path.dirname(thename), exist_ok=True)
@@ -236,16 +239,16 @@ class Timelapse():
                 print('[TL] A picture has been taken!')
             return
 
-        #the code below is executed by motion detecting module (separate thread)
-        if self.onepic: #if motion detection module needs a pic this will provide it
-            _take_picture(self.the_path)
-            return
+        # the code below is executed by motion detecting module (separate thread)
+        # if self.onepic: #if motion detection module needs a pic this will provide it
+        #     _take_picture(self.the_path)
+        #     return
 
-        #the code below is executed for taking several pictures (time lapse mode)
+        # the code below is executed for taking several pictures (time lapse mode)
         while self.jobs_added:
             self.jobs_added = False
 
-            #eliminating entries with the time that's passed
+            # eliminating entries with the time that's passed
             if self.status == []:
                 return
             cn = 0
@@ -257,15 +260,15 @@ class Timelapse():
             self.status = self.status[cn:]
             status_copy = copy.copy(self.status)
 
-            print("a list of pics to take...")
-            for itr in self.status:
-                print(itr)
+            # print("a list of pics to take...")  # it has to go
+            # for itr in self.status:             #
+            #     print(itr)                      #
 
             num_of_pic_to_take = len(self.status)
-            print("number of pictures to take:", num_of_pic_to_take)
+            # print("number of pictures to take:", num_of_pic_to_take)
             for next_pic in range(num_of_pic_to_take):
 
-                print("Next pic:", next_pic+1)
+                # print("Next pic:", next_pic+1)
 
                 while self.status[next_pic][0] - datetime.datetime.today() > self.time_res:
                     if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
@@ -274,7 +277,7 @@ class Timelapse():
                         break
 
                 if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
-                    print('[TL] Received <exit> signal!')
+                    # print('[TL] Received <exit> signal!')
                     break
                 if self.cam_opt['tl_req']:
                     self.cam_opt['tl_req'] = 0
@@ -291,7 +294,7 @@ class Timelapse():
             del self.cam_opt['running']['tl_active']
             self.cam_opt['tl_exit'] = 0
 
-        print("Time lapse's done")
+        # print("Time lapse's done")
         return
 
 
