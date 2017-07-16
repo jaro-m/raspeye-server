@@ -7,7 +7,8 @@ class Timelapse():
         To have a proper 'time lapse' effect it the pictures have to be convert
         into a video (it's not yet implemented)
     '''
-    def __init__(self, raspeye_path, camera, cam_opt, md):
+
+    def __init__(self, raspeye_path, camera, cam_opt):
         """At least 3 arguments are needed, the 4th is used by motion detecting module.
             input:
                 - raspeye_path = the path to the program's path
@@ -15,38 +16,42 @@ class Timelapse():
                 - cam_opt = a dictionary which controls the main program
                     and its modules behaviour, it's also used for communication
                     with Raspeye client.
-                - md = boolean, True when other modules use this class to take a picture
         """
         self.raspeye_path = raspeye_path
         self.camera = camera
         self.cam_opt = cam_opt
         if self.cam_opt['disk_full']:
             self.cam_opt['tl_exit'] = 1
-        #self.cam_opt_copy = copy.copy(cam_opt) #I think I'll need it'
-        self.onepic = md
-        if self.onepic:
-            self.the_path = raspeye_path
-        else:
-            self.cam_opt['running']['tl_active'] = 1
-            the_path = os.path.join(self.raspeye_path, 'timelapse')
-            if not os.path.isdir(the_path):
-                os.makedirs(the_path, exist_ok=True)
-            self.the_path = the_path
-            self.filename = os.path.join(self.the_path, 'timelapse.txt')
-            if not os.path.isfile(self.filename):
-                try:
-                    fh = open(self.filename, 'w')
-                except OSError as err:
-                    print("[TL] Error occurred during creation of 'timelapse.txt' file:\n", err)
-                else:
-                    fh.close()
-            self.time_res = datetime.timedelta(microseconds=10000)
-            self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
-            self.filename = None
-            self._calculate_times()
-            self.jobs_added = True
+        #self.onepic = md
+        #if self.onepic:
+        #    self.the_path = raspeye_path
+        #else:
+        self.cam_opt['running']['tl_active'] = 1
+        self.time_res = datetime.timedelta(microseconds=10000)
+        self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
+        self.the_path = self._set_thepath()
+        self._calculate_times()
+        self.filename = None
+        self.jobs_added = True
 
-    def _save_file(self, f2w, thename):
+    def _set_thepath(self):
+        """set up the path for time lapse directory and timelapse.txt file.
+        """
+        the_path = os.path.join(self.raspeye_path, 'timelapse')
+        if not os.path.isdir(the_path):
+            os.makedirs(the_path, exist_ok=True)
+        #self.the_path = the_path
+        self.filename = os.path.join(the_path, 'timelapse.txt')
+        if not os.path.isfile(self.filename):
+            try:
+                fh = open(self.filename, 'w')
+            except OSError as err:
+                print("[TL] Error occurred during creation of 'timelapse.txt' file:\n", err)
+            else:
+                fh.close()
+        return (the_path)
+
+    def _save_file(self, f2w, thename): # not used at the moment (it'll be redesigned)
         if f2w != None:
             if not os.path.isdir(os.path.dirname(thename)): #self.filename != None:
                 os.makedirs(os.path.dirname(thename), exist_ok=True)
@@ -221,33 +226,33 @@ class Timelapse():
                 return
 
             #taking a picture
-            if self.onepic:
-                spl_port = 3
-            else:
-                spl_port = 0
+            # if self.onepic:
+            #     spl_port = 3
+            # else:
+            #     spl_port = 0
 
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
             print("the pic {} will be saved to {}".format(current_pic_name, tl_path))
             self.camera.capture(os.path.join(tl_path, current_pic_name),
                                     use_video_port=True,
-                                    splitter_port=spl_port,
+                                    splitter_port=0,
                                     quality=85)
-            if self.onepic:
-                print('[TL] A picture has been taken! (MD)')
-            else:
-                print('[TL] A picture has been taken!')
+
+            print('[TL] A picture has been taken!')
             return
 
-        #the code below is executed by motion detecting module (separate thread)
-        if self.onepic: #if motion detection module needs a pic this will provide it
-            _take_picture(self.the_path)
-            return
+        # the code below is executed by motion detecting module (separate thread)
+        # if self.onepic: #if motion detection module needs a pic this will provide it
+        #     _take_picture(self.the_path)
+        #     return
 
-        #the code below is executed for taking several pictures (time lapse mode)
+        # the code below is executed for taking several pictures (time lapse mode)
         while self.jobs_added:
             self.jobs_added = False
 
-            #eliminating entries with the time that's passed
+            # eliminating entries with the time that's passed
+            if self.status == []:
+                return
             cn = 0
             for el in self.status:
                 if el[0] < datetime.datetime.today():
@@ -257,27 +262,24 @@ class Timelapse():
             self.status = self.status[cn:]
             status_copy = copy.copy(self.status)
 
-            num_of_pic_to_take = len(self.status)
-            print("number of pictures to take:", num_of_pic_to_take)
+            # print("a list of pics to take...")  # it has to go
+            # for itr in self.status:             #
             print("Time lapse should be finished at {!s}".format(self.status[-1][0]))
-            for take in range(num_of_pic_to_take):
 
-                print("Next pic: {} of {}".format(take+1, num_of_pic_to_take))
+            num_of_pic_to_take = len(self.status)
+            # print("number of pictures to take:", num_of_pic_to_take)
+            for next_pic in range(num_of_pic_to_take):
 
-                #calculating the time of the next picture, it'll be explained later
-                if take < num_of_pic_to_take-1:
-                    next_pic = self.status[take+1][0]
-                else:
-                    next_pic = self.status[-1][0]
+                # print("Next pic:", next_pic+1)
 
-                while next_pic - datetime.datetime.today() > self.time_res:
+                while self.status[next_pic][0] - datetime.datetime.today() > self.time_res:
                     if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                         break
                     if self.cam_opt['tl_req']:
                         break
 
                 if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
-                    print('[TL] Received <exit> signal!')
+                    # print('[TL] Received <exit> signal!')
                     break
                 if self.cam_opt['tl_req']:
                     self.cam_opt['tl_req'] = 0
@@ -287,16 +289,18 @@ class Timelapse():
                     status_copy = copy.copy(self.status)
                     break
 
-                _take_picture(self.status[take][1])
-                status_copy = status_copy[take+1:]
+                _take_picture(self.status[next_pic][1])
+                status_copy = status_copy[next_pic+1:]
 
         if 'tl_active' in self.cam_opt['running']:
             del self.cam_opt['running']['tl_active']
             self.cam_opt['tl_exit'] = 0
 
-        print("Time lapse's done")
+        # print("Time lapse's done")
         return
 
+
+    @property
     def get_status(self):
         """Swapping datetime objects with strings.
         """
@@ -310,7 +314,7 @@ class Timelapse():
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
     """Starting threading.
     """
-    timelapse_instance = Timelapse(path, camera, cam_opt, md)
+    timelapse_instance = Timelapse(path, camera, cam_opt)
     timelapse_instance.start_now()
     return
 
