@@ -22,10 +22,6 @@ class Timelapse():
         self.cam_opt = cam_opt
         if self.cam_opt['disk_full']:
             self.cam_opt['tl_exit'] = 1
-        #self.onepic = md
-        #if self.onepic:
-        #    self.the_path = raspeye_path
-        #else:
         self.cam_opt['running']['tl_active'] = 1
         self.time_res = datetime.timedelta(microseconds=10000)
         self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
@@ -40,7 +36,6 @@ class Timelapse():
         the_path = os.path.join(self.raspeye_path, 'timelapse')
         if not os.path.isdir(the_path):
             os.makedirs(the_path, exist_ok=True)
-        #self.the_path = the_path
         self.filename = os.path.join(the_path, 'timelapse.txt')
         if not os.path.isfile(self.filename):
             try:
@@ -49,7 +44,7 @@ class Timelapse():
                 print("[TL] Error occurred during creation of 'timelapse.txt' file:\n", err)
             else:
                 fh.close()
-        return (the_path)
+        return the_path
 
     def _save_file(self, f2w, thename): # not used at the moment (it'll be redesigned)
         if f2w != None:
@@ -135,13 +130,8 @@ class Timelapse():
                 else:
                     tmp_lst.append(item1)
 
-            #if the list2 is not empty then append it to list1
-            if list2 != []:
-                print("list2 is not empty yet")
-                tmp_lst.extend(list2)
+            tmp_lst.extend(list2)
 
-            print("Printing the merged list...") # just for testing
-            print(len(tmp_lst))
             for el in tmp_lst:
                 print(el)
             return tmp_lst
@@ -165,9 +155,6 @@ class Timelapse():
 
             if len(self.status) == 0:
                 if self.cam_opt['tl_starts'] == 0:
-                    # if self.cam_opt['tl_now'] == 0:
-                    #     self.cam_opt['tl_exit'] = 1
-                    #     return
                     start_time = datetime.datetime.today()
                 else:
                     start_time = _validate_time(self.cam_opt['tl_starts'])
@@ -181,25 +168,12 @@ class Timelapse():
                     start_time = _validate_time(self.cam_opt['tl_starts'])
                     if start_time == 0:
                         return
-
             temp_list = []
             t_delta = datetime.timedelta(seconds=self.cam_opt['tl_delay'])
             cntr = 0
             while cntr < self.cam_opt['tl_nop']:
                 temp_list.append((start_time + t_delta * cntr, the_path))
                 cntr += 1
-
-            #if len(self.status) != 0:
-
-            print("printing 'self.status':")
-            for el in self.status:
-                print(el[0], "---------")
-
-            print('')
-            print("printing 'temp_list':")
-            for el in temp_list:
-                print("---------", el[0])
-            print('')
 
             if self.status:
                 return _merge_times_lists(self.status, temp_list)
@@ -217,21 +191,12 @@ class Timelapse():
             #checking for sufficient space on the disk
             disk_space = shutil.disk_usage(self.the_path)
             if disk_space[2]//1048576 < 200:# leave at least 200MB of free disk space
-                #self.status[1].append('Free space on disk <= 200MB')
                 print('NOT ENOUGH SPACE ON DISK (<200MB)! SAVING PICTURES HAS STOPPED!')
                 self.cam_opt['disk_full'] = 1
                 self.cam_opt['tl_exit'] = 1
                 return
 
-            #taking a picture
-            # if self.onepic:
-            #     spl_port = 3
-            # else:
-            #     spl_port = 0
-
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
-            print("the pic", current_pic_name, "will sit in:", tl_path)
-            print("is there such a directory there?:", os.path.isdir(tl_path))
             self.camera.capture(os.path.join(tl_path, current_pic_name),
                                     use_video_port=True,
                                     splitter_port=0,
@@ -240,16 +205,11 @@ class Timelapse():
             print('[TL] A picture has been taken!')
             return
 
-        # the code below is executed by motion detecting module (separate thread)
-        # if self.onepic: #if motion detection module needs a pic this will provide it
-        #     _take_picture(self.the_path)
-        #     return
-
-        # the code below is executed for taking several pictures (time lapse mode)
+        # entering the main loop
         while self.jobs_added:
             self.jobs_added = False
 
-            # eliminating entries with the time that's passed
+            # eliminating entries if they're point to the past
             if self.status == []:
                 return
             cn = 0
@@ -261,15 +221,8 @@ class Timelapse():
             self.status = self.status[cn:]
             status_copy = copy.copy(self.status)
 
-            # print("a list of pics to take...")  # it has to go
-            # for itr in self.status:             #
-            #     print(itr)                      #
-
             num_of_pic_to_take = len(self.status)
-            # print("number of pictures to take:", num_of_pic_to_take)
             for next_pic in range(num_of_pic_to_take):
-
-                # print("Next pic:", next_pic+1)
 
                 while self.status[next_pic][0] - datetime.datetime.today() > self.time_res:
                     if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
