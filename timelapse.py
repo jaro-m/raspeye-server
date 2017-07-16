@@ -7,6 +7,7 @@ class Timelapse():
         To have a proper 'time lapse' effect it the pictures have to be convert
         into a video (it's not yet implemented)
     '''
+
     def __init__(self, raspeye_path, camera, cam_opt):
         """At least 3 arguments are needed, the 4th is used by motion detecting module.
             input:
@@ -28,12 +29,14 @@ class Timelapse():
         self.cam_opt['running']['tl_active'] = 1
         self.time_res = datetime.timedelta(microseconds=10000)
         self.status = [] # a list of tuples (datetime-object, a_path_as_a_string)
-        self.the_path = _set_thepath()
+        self.the_path = self._set_thepath()
         self._calculate_times()
         self.filename = None
         self.jobs_added = True
 
-    def _set_thepath():
+    def _set_thepath(self):
+        """set up the path for time lapse directory and timelapse.txt file.
+        """
         the_path = os.path.join(self.raspeye_path, 'timelapse')
         if not os.path.isdir(the_path):
             os.makedirs(the_path, exist_ok=True)
@@ -221,22 +224,20 @@ class Timelapse():
                 return
 
             #taking a picture
-            if self.onepic:
-                spl_port = 3
-            else:
-                spl_port = 0
+            # if self.onepic:
+            #     spl_port = 3
+            # else:
+            #     spl_port = 0
 
             current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
             print("the pic", current_pic_name, "will sit in:", tl_path)
             print("is there such a directory there?:", os.path.isdir(tl_path))
             self.camera.capture(os.path.join(tl_path, current_pic_name),
                                     use_video_port=True,
-                                    splitter_port=spl_port,
+                                    splitter_port=0,
                                     quality=85)
-            if self.onepic:
-                print('[TL] A picture has been taken! (MD)')
-            else:
-                print('[TL] A picture has been taken!')
+
+            print('[TL] A picture has been taken!')
             return
 
         # the code below is executed by motion detecting module (separate thread)
@@ -312,7 +313,7 @@ class Timelapse():
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
     """Starting threading.
     """
-    timelapse_instance = Timelapse(path, camera, cam_opt, md)
+    timelapse_instance = Timelapse(path, camera, cam_opt)
     timelapse_instance.start_now()
     return
 
