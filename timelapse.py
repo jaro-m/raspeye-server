@@ -158,9 +158,10 @@ class Timelapse():
         #try:
         pic_time = None
         for task in self.tasks:
-            if len(task) == 2 and ((pic_time is None and task[0]) or task[0][0] < pic_time):
-                pic_time = task[0][0]
-                index = counter
+            if task[0]:
+                if pic_time is None or task[0][0] < pic_time:
+                    pic_time = task[0][0]
+                    index = counter
             counter += 1
         if pic_time is None:
             return 0, 0
@@ -175,6 +176,8 @@ class Timelapse():
         del self.tasks[task_no][0][0]
         while True:
             next_one, next_task = self.get_theearliest()
+            if not next_one:
+                break
             if next_one - first_pic < self.time_res:
                 thelist.append((next_one, next_task))
                 del self.tasks[next_task][0][0]
@@ -189,27 +192,34 @@ class Timelapse():
         counter = 0
         pic_time = None
         for task in self.tasks:
-            if len(task) == 2 and (pic_time is None or task[0][-1] > pic_time):
-                pic_time = task[0][-1]
-                index = counter
+            if task[0]:
+                if pic_time is None or task[0][-1] > pic_time:
+                    pic_time = task[0][-1]
+                    index = counter
             counter += 1
         if pic_time is None:
             return 0, 0
         return pic_time, index
 
+    def put_back(self, lst):
+        lst.reverse()
+        for item in lst:
+            self.tasks[item[1]][0].insert(0, item[0])
+
     def start_now(self):
         '''The main method, starts the actual time lapse process.
         '''
         self.get_time_list()
+        formatR = self.get_thelast()[0]
+        #print(formatR)
+        print("Time lapse should be finished at {!s}".format(formatR))
+
         # entering the main loop
         while True:
             #self.jobs_added = False
 
-            formatR = self.get_thelast()[0]
-            print(formatR)
-            print("Time lapse should be finished at {!s}".format(formatR))
             the_queue = self.get_next_ones()
-            if the_queue == 0:
+            if not the_queue:
                 break
             #num_of_pic_to_take = len(the_queue)
 
@@ -224,17 +234,18 @@ class Timelapse():
                 break
             elif self.cam_opt['tl_req']:
                 self.cam_opt['tl_req'] = 0
-                #self.jobs_added = 1
+                self.put_back(the_queue)
                 self.get_time_list()
-                #self.status = status_copy
-                #self._calculate_times()
-                #status_copy = copy.copy(self.status)
+                formatR = self.get_thelast()[0]
+                #print(formatR)
+                print("Time lapse should be finished at {!s}".format(formatR))
                 continue
             else:
                 for pic in the_queue:
                     self._take_picture(self.tasks[pic[1]][1])
             
             self.check_disk_space()
+            # a space for some features ;)
             pass # -----------------------------------------------------
             for e in self.tasks:
                 if len(e) == 2:
