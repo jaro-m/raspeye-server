@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-import datetime, copy, shutil, os, picamera, json
+import datetime
+import shutil
+import os
+import json
+#import picamera
+
 class Timelapse():
     '''Time lapse class used to controll taking pictures for 'time lapse' effect.
         It only takes pictures at given time/frequency/number...
@@ -24,11 +29,8 @@ class Timelapse():
             self.cam_opt['tl_exit'] = 1
         self.cam_opt['running']['tl_active'] = 1
         self.time_res = datetime.timedelta(microseconds=10000)
-        self.tasks = [] # a list of tuples (datetime-object, a_path_as_a_string)
+        self.tasks = []
         self.the_path = self._set_thepath()
-        #self._calculate_times()
-        #self.filename = None
-        #self.jobs_added = True
 
     def _set_thepath(self):
         """set up the path for time lapse directory and timelapse.txt file.
@@ -119,11 +121,11 @@ class Timelapse():
         else:
             the_path = os.path.join(self.raspeye_path, 'timelapse', str(datetime.datetime.today()))
 
-        # makes the ditrectory if one doesn't exist
+        # creating the ditrectory if one doesn't exist
         if not os.path.isdir(the_path):
             os.makedirs(the_path, exist_ok=True)
 
-        # finding the time of the first picture (start_time)
+        # finding the time of the first picture in the sequence (start_time)
         if self.cam_opt['tl_starts'] == 0:
             if self.cam_opt['tl_now'] == True:
                 start_time = datetime.datetime.today()
@@ -146,44 +148,59 @@ class Timelapse():
         # adding the path
         temp_list = [temp_list, the_path]
 
-        # appending to the self.status
+        # appending to the self.tasks
         self.tasks.append(temp_list)
         return
 
     def get_theearliest(self):
         if self.tasks == []:
             return 0, 0
-        index = 0
-        counter = 0
-        #try:
+        path = ''
         pic_time = None
         for task in self.tasks:
             if task[0]:
                 if pic_time is None or task[0][0] < pic_time:
                     pic_time = task[0][0]
-                    index = counter
-            counter += 1
+                    path = task[1]
         if pic_time is None:
             return 0, 0
-        return pic_time, index 
+        return pic_time, path
 
     def get_next_ones(self):
         thelist = []
-        first_pic, task_no = self.get_theearliest()
+        first_pic, its_path = self.get_theearliest()
         if first_pic == 0:
             return 0
-        thelist.append((first_pic, task_no))
-        del self.tasks[task_no][0][0]
-        while True:
-            next_one, next_task = self.get_theearliest()
-            if not next_one:
-                break
-            if next_one - first_pic < self.time_res:
-                thelist.append((next_one, next_task))
-                del self.tasks[next_task][0][0]
+        thelist.append((first_pic, its_path))
+        #del self.tasks[task_no][0][0]
+        for task in self.tasks:
+            if not task[0]:
+                continue
+            for t in thelist:
+                if task[0][0] == t[0]:
+                    break
             else:
-                break
+                if task[0][0] - first_pic < self.time_res:
+                    thelist.append((task[0][0], task[1]))
         return thelist
+
+    # def _get_next_ones(self):
+    #     thelist = []
+    #     first_pic, task_no = self.get_theearliest()
+    #     if first_pic == 0:
+    #         return 0
+    #     thelist.append((first_pic, task_no))
+    #     del self.tasks[task_no][0][0]
+    #     while True:
+    #         next_one, next_task = self.get_theearliest()
+    #         if not next_one:
+    #             break
+    #         if next_one - first_pic < self.time_res:
+    #             thelist.append((next_one, next_task))
+    #             del self.tasks[next_task][0][0]
+    #         else:
+    #             break
+    #     return thelist
 
     def get_thelast(self):
         if self.tasks == []:
@@ -201,10 +218,10 @@ class Timelapse():
             return 0, 0
         return pic_time, index
 
-    def put_back(self, lst):
-        lst.reverse()
-        for item in lst:
-            self.tasks[item[1]][0].insert(0, item[0])
+    # def put_back(self, lst):
+    #     lst.reverse()
+    #     for item in lst:
+    #         self.tasks[item[1]][0].insert(0, item[0])
 
     def start_now(self):
         '''The main method, starts the actual time lapse process.
@@ -234,30 +251,39 @@ class Timelapse():
                 break
             elif self.cam_opt['tl_req']:
                 self.cam_opt['tl_req'] = 0
-                self.put_back(the_queue)
+                #self.put_back(the_queue)
                 self.get_time_list()
                 formatR = self.get_thelast()[0]
-                #print(formatR)
                 print("Time lapse should be finished at {!s}".format(formatR))
                 continue
             else:
                 for pic in the_queue:
-                    self._take_picture(self.tasks[pic[1]][1])
+                    # taking the picture
+                    self._take_picture(pic[1])
+
+                    # and deleting the entry in the tasks list
+                    ind = 0
+                    for task in self.tasks:
+                        if task[1] == pic[1]:
+                            del self.tasks[ind][0][0]
+                            break
+                        ind += 1
             
+            # checking whether there's enough free space left on the disk
             self.check_disk_space()
-            # a space for some features ;)
-            pass # -----------------------------------------------------
+
+            # checking for empty list
             for e in self.tasks:
-                if len(e) == 2:
+                if e[0]:
                     break
-            else:
-                break
+            else: # if all pictures have been taken then finish
+                break # getting out of the main while loop
 
         if 'tl_active' in self.cam_opt['running']:
             del self.cam_opt['running']['tl_active']
             self.cam_opt['tl_exit'] = 0
 
-        # print("Time lapse's done")
+        print("Time lapse's done")
         return
 
     @property
