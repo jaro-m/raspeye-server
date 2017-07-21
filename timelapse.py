@@ -33,7 +33,7 @@ class Timelapse():
         self.the_path = self._set_thepath()
 
     def _set_thepath(self):
-        """set up the path for time lapse directory and timelapse.txt file.
+        """set up the path for time lapse directory.
         """
         the_path = os.path.join(self.raspeye_path, 'timelapse')
         #if not os.path.isdir(the_path):
@@ -41,6 +41,8 @@ class Timelapse():
         return the_path
 
     def _save_file(self, f2w, thename): # not used at the moment (it'll be redesigned)
+        """
+        """
         if f2w != None:
             if not os.path.isdir(os.path.dirname(thename)): #self.filename != None:
                 os.makedirs(os.path.dirname(thename), exist_ok=True)
@@ -61,6 +63,9 @@ class Timelapse():
         return
 
     def _validate_time(self, t):
+        """Tries to use datetime method from datetime module.
+            If success, then returns the object, 0 otherwise.
+        """
         try:
             date0, time0 = t.split(' ')
             if '/' in date0:
@@ -97,7 +102,7 @@ class Timelapse():
             return
     
     def _take_picture(self, tl_path):
-        """take picture and save it"""
+        """Takes picture and save it"""
 
         current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
         self.camera.capture(os.path.join(tl_path, current_pic_name),
@@ -112,7 +117,7 @@ class Timelapse():
         """Creates a list of datetime objects form values in self.cam_opt.
             ('tl_nop', 'tl_delay', 'tl_starts' and eventually 'tl_now')
             The created list is the first element of another list, the second element
-            in the list is the path, where the pictures will be saved.
+            of that list is the path, where the pictures will be saved.
         """
 
         # setting up the path
@@ -153,6 +158,9 @@ class Timelapse():
         return
 
     def get_theearliest(self):
+        """Finds the time of the first picture in the lists
+            Returns a tuple, the time object and the path where the picture should be saved.
+        """
         if self.tasks == []:
             return 0, 0
         path = ''
@@ -167,12 +175,14 @@ class Timelapse():
         return pic_time, path
 
     def get_next_ones(self):
+        """Looks for the times with the difference of the value self.time_res.
+            Returns the list of tuples (time, path).
+        """
         thelist = []
         first_pic, its_path = self.get_theearliest()
         if first_pic == 0:
             return 0
         thelist.append((first_pic, its_path))
-        #del self.tasks[task_no][0][0]
         for task in self.tasks:
             if not task[0]:
                 continue
@@ -184,25 +194,10 @@ class Timelapse():
                     thelist.append((task[0][0], task[1]))
         return thelist
 
-    # def _get_next_ones(self):
-    #     thelist = []
-    #     first_pic, task_no = self.get_theearliest()
-    #     if first_pic == 0:
-    #         return 0
-    #     thelist.append((first_pic, task_no))
-    #     del self.tasks[task_no][0][0]
-    #     while True:
-    #         next_one, next_task = self.get_theearliest()
-    #         if not next_one:
-    #             break
-    #         if next_one - first_pic < self.time_res:
-    #             thelist.append((next_one, next_task))
-    #             del self.tasks[next_task][0][0]
-    #         else:
-    #             break
-    #     return thelist
-
     def get_thelast(self):
+        """Finds the time of the last picture of all running time lapse sequences.
+            Returns a tuple (time object, path)
+        """
         if self.tasks == []:
             return 0, 0
         index = 0
@@ -217,11 +212,6 @@ class Timelapse():
         if pic_time is None:
             return 0, 0
         return pic_time, index
-
-    # def put_back(self, lst):
-    #     lst.reverse()
-    #     for item in lst:
-    #         self.tasks[item[1]][0].insert(0, item[0])
 
     def start_now(self):
         '''The main method, starts the actual time lapse process.
@@ -264,7 +254,7 @@ class Timelapse():
                     # and deleting the entry in the tasks list
                     ind = 0
                     for task in self.tasks:
-                        if task[1] == pic[1]:
+                        if task[1] == pic[1]: # finding the list with the path = pic[1]
                             del self.tasks[ind][0][0]
                             break
                         ind += 1
@@ -299,7 +289,7 @@ class Timelapse():
         return result
 
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
-    """Starting threading.
+    """Creates a TimeLapse instance and starts it.
     """
     timelapse_instance = Timelapse(path, camera, cam_opt)
     timelapse_instance.start_now()
