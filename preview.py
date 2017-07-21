@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
 import socket
+import io
+import struct
+
 def preview_mode(conn, camera, cam_opt):
-    import io, struct
+    """displays the preview.
+        It still uses pygame.
+    """
+    #import io, struct
     if not 'pr_active' in cam_opt['running']:
         cam_opt['running']['pr_active'] = 1
     else:
