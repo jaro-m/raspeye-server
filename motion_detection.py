@@ -88,7 +88,7 @@ class SimpleMotionDetection():
                 self.update_md_times()
             if self.theday != datetime.date.today().isoformat():
                 self.theday = datetime.date.today().isoformat()
-                update_path()
+                self.update_path()
         print('[MD] Received <exit> signal!')
         self.camera.stop_recording()
         if 'md_active' in self.cam_opt['running']:
