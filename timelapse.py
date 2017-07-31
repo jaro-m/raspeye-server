@@ -287,11 +287,11 @@ class Timelapse():
         result = []
         for task in self.tasks:
             tmp_lst = []
-            for tm in task[0]:
+            for tm in task['sequence']:
                 prn = tm.strftime("%Y/%m/%d %H.%M.%S,%f")
                 #print(prn)
                 tmp_lst.append(prn)
-            result.append((tmp_lst, task[1]))
+            result.append({'sequence': tmp_lst, 'path': task['path']})
         return result
 
 def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
