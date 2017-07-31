@@ -7,9 +7,9 @@ import json
 #import picamera
 
 class Timelapse():
-    '''Time lapse class used to controll taking pictures for 'time lapse' effect.
+    '''It controls taking pictures for 'time lapse' effect.
         It only takes pictures at given time/frequency/number...
-        To have a proper 'time lapse' effect it the pictures have to be convert
+        To have a proper 'time lapse' effect the pictures have to be converted
         into a video (it's not yet implemented)
     '''
 
@@ -116,8 +116,9 @@ class Timelapse():
     def get_time_list(self):
         """Creates a list of datetime objects form values in self.cam_opt.
             ('tl_nop', 'tl_delay', 'tl_starts' and eventually 'tl_now')
-            The created list is the first element of another list, the second element
-            of that list is the path, where the pictures will be saved.
+            The created list and the path, where the pictures will be saved
+            are put in a dictionary with keys: 'sequence' and 'path'
+            At the end the dictionary is added to self.tasks list
         """
 
         # setting up the path
@@ -150,11 +151,15 @@ class Timelapse():
             temp_list.append(start_time + t_delta * cntr)
             cntr += 1
 
-        # adding the path
-        temp_list = [temp_list, the_path]
+        # creating tasks dictionary and adding the data
+        #  temp_list as 'sequence' and the path as 'path'
+        ## temp_list = [temp_list, the_path] - old way (changed)
+        temp_tasks = {}
+        temp_tasks['sequence'] = temp_list
+        temp_tasks['path'] = the_path
 
         # appending to the self.tasks
-        self.tasks.append(temp_list)
+        self.tasks.append(temp_tasks)
         return
 
     def get_theearliest(self):
@@ -166,10 +171,10 @@ class Timelapse():
         path = ''
         pic_time = None
         for task in self.tasks:
-            if task[0]:
-                if pic_time is None or task[0][0] < pic_time:
-                    pic_time = task[0][0]
-                    path = task[1]
+            if task['sequence']:
+                if pic_time is None or task['sequence'][0] < pic_time:
+                    pic_time = task['sequence'][0]
+                    path = task['path']
         if pic_time is None:
             return 0, 0
         return pic_time, path
@@ -182,16 +187,20 @@ class Timelapse():
         first_pic, its_path = self.get_theearliest()
         if first_pic == 0:
             return 0
-        thelist.append((first_pic, its_path))
+        tmp_dict = {}
+        tmp_dict['time'] = first_pic
+        tmp_dict['path'] = its_path
+        thelist.append(tmp_dict)
         for task in self.tasks:
-            if not task[0]:
+            if not task['sequence']:
+                #if the 'sequence' is empty the task can be deleted
                 continue
-            for t in thelist:
-                if task[0][0] == t[0]:
+            for job in thelist:
+                if task['sequence'][0] == job['time']:
                     break
             else:
-                if task[0][0] - first_pic < self.time_res:
-                    thelist.append((task[0][0], task[1]))
+                if task['sequence'][0] - first_pic < self.time_res:
+                    thelist.append({'time': task['sequence'][0], 'path': task[path]})
         return thelist
 
     def get_thelast(self):
@@ -200,26 +209,23 @@ class Timelapse():
         """
         if self.tasks == []:
             return 0, 0
-        index = 0
-        counter = 0
         pic_time = None
+        pic_path = None
         for task in self.tasks:
-            if task[0]:
-                if pic_time is None or task[0][-1] > pic_time:
-                    pic_time = task[0][-1]
-                    index = counter
-            counter += 1
+            if task['sequence']:
+                if pic_time is None or task['sequence'][-1] > pic_time:
+                    pic_time = task['sequence'][-1]
+                    pic_path = task['path']
         if pic_time is None:
             return 0, 0
-        return pic_time, index
+        return {'time': pic_time, 'path': pic_path}
 
     def start_now(self):
         '''The main method, starts the actual time lapse process.
         '''
         self.get_time_list()
-        formatR = self.get_thelast()[0]
-        #print(formatR)
-        print("Time lapse should be finished at {!s}".format(formatR))
+        last_pic = self.get_thelast()
+        print("Time lapse should be finished at {!s} and saved to {}".format(last_pic['time'], last_pic['path']))
 
         # entering the main loop
         while True:
@@ -230,7 +236,7 @@ class Timelapse():
                 break
             #num_of_pic_to_take = len(the_queue)
 
-            while the_queue[0][0] - datetime.datetime.today() > self.time_res:
+            while the_queue[0]['time'] - datetime.datetime.today() > self.time_res:
                 if self.cam_opt['tl_exit'] or self.cam_opt['exit']:
                     break
                 if self.cam_opt['tl_req']:
@@ -243,19 +249,19 @@ class Timelapse():
                 self.cam_opt['tl_req'] = 0
                 #self.put_back(the_queue)
                 self.get_time_list()
-                formatR = self.get_thelast()[0]
-                print("Time lapse should be finished at {!s}".format(formatR))
+                last_pic = self.get_thelast()
+                print("Time lapse should be finished at {!s} and saved to {}".format(last_pic['time'], last_pic['path']))
                 continue
             else:
                 for pic in the_queue:
                     # taking the picture
-                    self._take_picture(pic[1])
+                    self._take_picture(pic['path'])
 
                     # and deleting the entry in the tasks list
-                    ind = 0
+                    ind = 0 # for loop doesn't provide the index, I should have used iter
                     for task in self.tasks:
-                        if task[1] == pic[1]: # finding the list with the path = pic[1]
-                            del self.tasks[ind][0][0]
+                        if task['path'] == pic['path']: # finding the list with the path = pic[1]
+                            del self.tasks[ind]['sequence'][0]
                             break
                         ind += 1
             
@@ -264,7 +270,7 @@ class Timelapse():
 
             # checking for empty list
             for e in self.tasks:
-                if e[0]:
+                if e['sequence']:
                     break
             else: # if all pictures have been taken then finish
                 break # getting out of the main while loop
