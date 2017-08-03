@@ -272,7 +272,7 @@ while donotexit:
 
         if 'md_active' in cam_opt['running']:
             cam_opt['md_exit'] = True
-        modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
+        modet_mod = motion_detection.SimpleMotionDetection(args=(camera, conn, cam_opt, raspeye_path))
         modet_mod.start()
         continue
 

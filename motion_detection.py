@@ -2,8 +2,9 @@
 import numpy as np
 import datetime, time, os
 import timelapse
-
 import picamera.array
+from threading import Thread
+
 class MyMotionDetector(picamera.array.PiMotionAnalysis):
 
     def __init__(self, camera, detected):
@@ -24,16 +25,22 @@ class MyMotionDetector(picamera.array.PiMotionAnalysis):
         else:#?#
             pass #--++==**ooGGWWMMWWGGoo**==++--
 
-class SimpleMotionDetection():
-    '''
+class SimpleMotionDetection(Thread): # I's going to be a daemon thread in the future
+    '''Detects motion analyzing camera output.
     '''
 
-    def __init__(self, camera, connection, camera_options, raspeye_path):
+    def __init__(self,
+                 group=None,
+                 target=None,
+                 name="MD-thread",
+                 args=(),
+                 kwargs=None,
+                 verbose=None):
+        super().__init__()
+        #def __init__(self, camera, connection, camera_options, raspeye_path):
         import os, constants
-        self.camera = camera
-        self.conn = connection
-        self.cam_opt = camera_options
-        self.raspeye_path = raspeye_path
+
+        self.camera, self.conn, self.cam_opt, self.raspeye_path = args
         self.detected = {'detected': False}
         the_file = os.path.join(self.raspeye_path, 'md-timetable.txt')
         if not os.path.isfile(the_file):
@@ -68,7 +75,7 @@ class SimpleMotionDetection():
         return
 
 
-    def start_md(self):
+    def run(self):
         if 'md_active' in self.cam_opt['running']: # this is just in case, probably not needed at all
              self.cam_opt['md_exit'] = True
         #     del self.cam_opt['runnig']['md_active']
@@ -96,10 +103,10 @@ class SimpleMotionDetection():
         self.cam_opt['md_exit'] = 0
         return
 
-def mo_detect(camera, connection, cam_opt, raspeye_path):
-    md_instance = SimpleMotionDetection(camera, connection, cam_opt, raspeye_path)
-    md_instance.start_md()
-    return
+# def mo_detect(camera, connection, cam_opt, raspeye_path):
+#     md_instance = SimpleMotionDetection(camera, connection, cam_opt, raspeye_path)
+#     md_instance.start_md()
+#     return
 
 if __name__ == '__main__':
-        print('[MD] motion detection module for raspeye-srv.py')
+        print("It's a module for rapeye - srv.py\nStart raspeye - srv.py!")
