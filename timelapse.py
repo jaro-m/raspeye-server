@@ -157,7 +157,6 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
 
         # creating tasks dictionary and adding the data
         #  temp_list as 'sequence' and the path as 'path'
-        ## temp_list = [temp_list, the_path] - old way (changed)
         temp_tasks = {}
         temp_tasks['sequence'] = temp_list
         temp_tasks['path'] = the_path
@@ -298,12 +297,5 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
             result.append({'sequence': tmp_lst, 'path': task['path']})
         return result
 
-def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, it will be redesigned in future
-    """Creates a TimeLapse instance and starts it.
-    """
-    timelapse_instance = Timelapse(path, camera, cam_opt)
-    timelapse_instance.run()
-    return
-
 if __name__ == '__main__':
-    print("It's a module for rapeye-srv.py")
+    print("It's a module for rapeye-srv.py\nStart raspeye-srv.py!")
