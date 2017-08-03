@@ -55,4 +55,4 @@ def preview_mode(conn, camera, cam_opt):
     return
 
 if __name__ == '__main__':
-    print("[PR] It's just a helper module for raspeye-srv.py")
+    print("It's a module for rapeye-srv.py\nStart raspeye-srv.py!")
