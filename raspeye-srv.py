@@ -133,18 +133,11 @@ def validating_cam_opt(cam_opt_tmp):
                 tmpval = _validate_time(cam_opt_tmp[key_])
                 if tmpval != 0:
                     cam_opt[key_] = cam_opt_tmp[key_]
-        # elif key_ == 'tl_ends':
-        #     if cam_opt_tmp[key_] != 0:
-        #         if not validate_time(cam_opt_tmp[key_]):
-        #             cam_opt[key_] = 0
         elif key_ == 'tl_exit':
-            #if cam_opt_tmp[key_] in constants.EXIT_VAL:
             cam_opt[key_] = cam_opt_tmp[key_]
         elif key_ == 'md_exit':
-            #if cam_opt_tmp[key_] in constants.EXIT_VAL:
             cam_opt[key_] = cam_opt_tmp[key_]
         elif key_ == 'pr_exit':
-            #if cam_opt_tmp[key_] in constants.EXIT_VAL:
             cam_opt[key_] = cam_opt_tmp[key_]
         elif key_ == 'tl_camres':
             try:
@@ -258,7 +251,6 @@ def send_opts():
     return
 
 
-#The end of functions' definitions-----
 #The main loop starts here ------------
 
 srvsoc = start_sockets()
@@ -277,9 +269,7 @@ while donotexit:
         continue
 
     elif actionNo == 10:
-        # print('')
-        # print('<Motion Detection> is starting')# motion detection will be started with the server
-        # print('')
+
         if 'md_active' in cam_opt['running']:
             cam_opt['md_exit'] = True
         modet_mod = threading.Thread(target=motion_detection.mo_detect, args=(camera, conn, cam_opt, raspeye_path))
@@ -287,10 +277,8 @@ while donotexit:
         continue
 
     elif actionNo == 20:
-        # print('')
-        # print('<Time Lapse> is starting')# time lapse need more work, but it should work
-        # print('')
-        if 'tl_active' in cam_opt['running']: # ATM there's no way to add time lapse jobs (already implementing)
+
+        if 'tl_active' in cam_opt['running']:
             cam_opt['tl_req'] = 1
         else:
             timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
@@ -298,32 +286,26 @@ while donotexit:
         continue
 
     elif actionNo == 30:
-        # print('')
-        # print('<Preview> is starting')#preview works fine
-        # print('')
+
         preview_thread = threading.Thread(target=preview.preview_mode, args=(conn, camera, cam_opt))
         preview_thread.start()
 
     elif actionNo == 40:
-        # print('')
-        # print('Updating options')
-        # print('')
+
         receive_opts()
 
     elif actionNo == 50:
-        # print('')
-        # print('Sending Raspeye status to the client')
-        # print('')
+
         send_opts()
 
     if cam_opt['exit']:
         donotexit = False
 
 print('preparing for exit...')
-while len(cam_opt['running']) > 0:
-    cam_opt['tl_exit'] = True
-    cam_opt['md_exit'] = True
-    cam_opt['pr_exit'] = True
+while len(cam_opt['running']):
+    cam_opt['tl_exit'] = 1
+    cam_opt['md_exit'] = 1
+    cam_opt['pr_exit'] = 1
 
 srvsoc.close()
 sys.exit()
