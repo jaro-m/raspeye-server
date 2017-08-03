@@ -281,7 +281,7 @@ while donotexit:
         if 'tl_active' in cam_opt['running']:
             cam_opt['tl_req'] = 1
         else:
-            timelapse_thread = threading.Thread(target=timelapse.timelapse_start, args=(raspeye_path, camera, cam_opt))
+            timelapse_thread = timelapse.Timelapse(args=(raspeye_path, camera, cam_opt))
             timelapse_thread.start()
         continue
 

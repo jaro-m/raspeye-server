@@ -4,17 +4,24 @@ import datetime
 import shutil
 import os
 import json
-#import picamera
+from threading import Thread
 
-class Timelapse():
+class Timelapse(Thread): # I's going to be a daemon thread in the future
     '''It controls taking pictures for 'time lapse' effect.
         It only takes pictures at given time/frequency/number...
         To have a proper 'time lapse' effect the pictures have to be converted
         into a video (it's not yet implemented)
     '''
 
-    def __init__(self, raspeye_path, camera, cam_opt):
-        """At least 3 arguments are needed, the 4th is used by motion detecting module.
+    def __init__(self,
+                group=None,
+                target=None,
+                name="TL-thread",
+                args=(),
+                kwargs=None,
+                verbose=None):
+        super().__init__()
+        """3 arguments are needed.
             input:
                 - raspeye_path = the path to the program's path
                 - camera = picamera.PiCamera() instance
@@ -22,9 +29,8 @@ class Timelapse():
                     and its modules behaviour, it's also used for communication
                     with Raspeye client.
         """
-        self.raspeye_path = raspeye_path
-        self.camera = camera
-        self.cam_opt = cam_opt
+
+        self.raspeye_path, self.camera, self.cam_opt = args
         if self.cam_opt['disk_full']:
             self.cam_opt['tl_exit'] = 1
         self.cam_opt['running']['tl_active'] = 1
@@ -36,15 +42,13 @@ class Timelapse():
         """set up the path for time lapse directory.
         """
         the_path = os.path.join(self.raspeye_path, 'timelapse')
-        #if not os.path.isdir(the_path):
-        #    os.makedirs(the_path, exist_ok=True)
         return the_path
 
     def _save_file(self, f2w, thename): # not used at the moment (it'll be redesigned)
         """
         """
         if f2w != None:
-            if not os.path.isdir(os.path.dirname(thename)): #self.filename != None:
+            if not os.path.isdir(os.path.dirname(thename)):
                 os.makedirs(os.path.dirname(thename), exist_ok=True)
             try:
                 filehnd = open(thename, 'a') #datetime.datetime.now().strftime("tl-status-%H.%M.%S.txt")), 'w')
@@ -220,7 +224,7 @@ class Timelapse():
             return 0, 0
         return {'time': pic_time, 'path': pic_path}
 
-    def start_now(self):
+    def run(self):
         '''The main method, starts the actual time lapse process.
         '''
         self.get_time_list()
@@ -298,7 +302,7 @@ def timelapse_start(path, camera, cam_opt, md=False): #It's used by threading, i
     """Creates a TimeLapse instance and starts it.
     """
     timelapse_instance = Timelapse(path, camera, cam_opt)
-    timelapse_instance.start_now()
+    timelapse_instance.run()
     return
 
 if __name__ == '__main__':
