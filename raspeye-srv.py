@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 
-import sys, json, socket, struct, picamera, threading, picamera.array, os, copy, datetime # time
-import constants, preview, timelapse, motion_detection
+import os
+import sys
+import json
+import socket
+import struct
+import threading
+import picamera
+import picamera.array
+import copy
+import datetime
+import logging
+
+import constants
+import preview
+import timelapse
+import motion_detection
 #from timeit import default_timer as timer
 
 try:
@@ -13,10 +27,19 @@ except IndexError:
 raspeye_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 #print('Starting from the path:', raspeye_path)
 
+#configuring and starting logging
+logger = logging.getLogger("RE-main")
+logger.setLevel(logging.INFO)
+log_fh = logging.FileHandler("raspeye.log")
+log_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+log_fh.setFormatter(log_formatter)
+logger.addHandler(log_fh)
+logger.info("---START---")
 
 try:
     camera = picamera.PiCamera()
 except picamera.exc.PiCameraMMALError as err:
+    logger.exception("Creating PiCamera instance error!")
     print("Camera is in use!:", err)
     sys.exit()
 
@@ -28,12 +51,14 @@ def start_sockets():
     try:
         server_socket.bind((my_ip, my_port))
     except OSError as err:
+        logger.exception("socket.bind error")
         print('Address:', my_ip, end='')
         print(', Error message:', '"', end='')
         print(err, end='')
         print('"')
         sys.exit()
     server_socket.listen(3)
+    logger.info("Server is running")
     print('Server is running now')
     return server_socket
 
@@ -44,16 +69,14 @@ def listening2soc(srvsoc):
     Output: conn - client socket object
             actionNo - a number as a command
     """
-    #print('')
-    #print('Listening...')
+    logger.info('Listening...')
     conn, clnaddr = srvsoc.accept()
-    #print('')
-    #print('Accepted connection from:', clnaddr[0])
+    logger.info(('Accepted connection from:', clnaddr[0]))
     conn.settimeout(3)#<None> for blocking socket
     try:
         actionNo = conn.recv(4)
     except socket.timeout as err:
-        print('Error:', err)
+        logger.exception('Connection timeout')
         return
     else:
         actionNo = struct.unpack('<L', actionNo)[0]
@@ -88,6 +111,7 @@ def validating_cam_opt(cam_opt_tmp):
         elif '-' in date0:
             day0, month0, year0 = date0.split('-')
         else:
+            logger.error("time validation error")
             return False
         hour0, minute0 = time0.split(':')
         year0 = int(year0)
@@ -101,6 +125,7 @@ def validating_cam_opt(cam_opt_tmp):
         #    print("srv/exception!")
         #    return False
         #else:
+        logger.info("time validation OK")
         return thetime
 
     global cam_opt
@@ -147,7 +172,7 @@ def validating_cam_opt(cam_opt_tmp):
                     if (width < 2592) and (height > 1944):
                         cam_opt[key_] = cam_opt_tmp[key_]
             except:
-                print('Given wrong camera resolution (TL)')
+                logger.exception('wrong camera resolution info(TL)')
         elif key_ == 'pr_camres':
             try:
                 width = cam_opt_tmp[key_][0]
@@ -156,7 +181,7 @@ def validating_cam_opt(cam_opt_tmp):
                     if (width < 2592) and (height > 1944):
                         cam_opt[key_] = cam_opt_tmp[key_]
             except:
-                print('Given wrong camera resolution (PR)')
+                logger.exception('wrong camera resolution info(PR)')
         elif key_ == 'cam_res':
             try:
                 width = cam_opt_tmp[key_][0]
@@ -165,7 +190,7 @@ def validating_cam_opt(cam_opt_tmp):
                     if (width < 2592) and (height > 1944):
                         cam_opt[key_] = cam_opt_tmp[key_]
             except:
-                print('Given wrong camera resolution')
+                logger.exception('wrong camera resolution info')
         elif key_ == 'cam_shtr_spd':
             if isinstance(cam_opt_tmp[key_], int):
                 if cam_opt_tmp[key_] > constants.CAM_SHTR_SPD_MAXVAL:
@@ -186,6 +211,7 @@ def validating_cam_opt(cam_opt_tmp):
     # for itm in cam_opt:
     #     print(itm, cam_opt[itm])
     # print('---')
+    logger.info("CAM_OPT validation OK")
     return
 
 def receive_opts():
@@ -210,9 +236,9 @@ def receive_opts():
                 data_toread -= len(datain)
             data_temp += datain
         except socket.timeout as err:
-            print("CAM_OPT hasn't been updated. Socket error:", err)
+            logger.exception("CAM_OPT not updated. Socket timeout")
             return
-    #print('All data received. Data updated')
+    logger.info('All data received. CAM_OPT updated')
     cam_opt_s = str(data_temp)[2:-1]
     cam_opt_tmp = json.loads(cam_opt_s)
     validating_cam_opt(cam_opt_tmp)
@@ -228,18 +254,18 @@ def send_opts():
     flen = struct.pack('<L', flsize)
     try:
         if conn.sendall(flen) != None:
-            print('Connection error')
+            logger.error('CAM_OPT sending, connection error')
             conn.settimeout(None)
             return
         bytes_sent = conn.sendall(optstr)
     except socket.timeout as err:
-        print('Error while sending data to the client:', err)
+        logger.exception("CAM_OPT sending, socket timeout")
     else:
         if bytes_sent != None:
-            print('Sending CAM_OPT failure, bytes sent:', bytes_sent, 'out of', filesize)
+            logger.error(('Sending CAM_OPT, bytes sent:', bytes_sent, 'out of', filesize))
             conn.settimeout(None)
             return
-        #print('All data has been sent.')
+        logger.info('CAM_OPT sending: all OK')
     conn.settimeout(None)
     return
 
@@ -261,51 +287,56 @@ while donotexit:
 
     conn, actionNo = listening2soc(srvsoc)
     if actionNo == 0:
+        logger.info("Exit signal received")
         donotexit = False
         cam_opt['md_exit'] = 1
         cam_opt['pr_exit'] = 1
         cam_opt['tl_exit'] = 1
         cam_opt['exit'] = 1
-        continue
+        #continue
 
     elif actionNo == 10:
-
+        logger.info("Received 10 MD")
         if 'md_active' in cam_opt['running']:
             cam_opt['md_exit'] = True
         modet_mod = motion_detection.SimpleMotionDetection(args=(camera, conn, cam_opt, raspeye_path))
+        logger.info("SRV starting MD")
         modet_mod.start()
-        continue
+        #continue
 
     elif actionNo == 20:
-
+        logger.info("Received 20 TL")
         if 'tl_active' in cam_opt['running']:
             cam_opt['tl_req'] = 1
         else:
             timelapse_thread = timelapse.Timelapse(args=(raspeye_path, camera, cam_opt))
+            logger.info("SRV starting TL")
             timelapse_thread.start()
-        continue
+        #continue
 
     elif actionNo == 30:
-
-        preview_thread = threading.Thread(target=preview.preview_mode, args=(conn, camera, cam_opt))
+        logger.info("Received 30 PR")
+        preview_thread = threading.Thread(name="PR-thread", target=preview.preview_mode, args=(conn, camera, cam_opt))
+        logger.info("SRV starting PR")
         preview_thread.start()
 
     elif actionNo == 40:
-
+        logger.info("Received 40 rcv cam_opt")
         receive_opts()
 
     elif actionNo == 50:
-
+        logger.info("Received 50 snd cam_opt")
         send_opts()
 
     if cam_opt['exit']:
         donotexit = False
 
-print('preparing for exit...')
+logger.info('SRV preparing for exit...')
 while len(cam_opt['running']):
     cam_opt['tl_exit'] = 1
     cam_opt['md_exit'] = 1
     cam_opt['pr_exit'] = 1
 
 srvsoc.close()
+logger.info("Socket closed")
 sys.exit()

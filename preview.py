@@ -3,6 +3,9 @@
 import socket
 import io
 import struct
+import logging
+
+logger = logging.getLogger("RE-main.PR")
 
 def preview_mode(conn, camera, cam_opt):
     """displays the preview.
@@ -16,14 +19,14 @@ def preview_mode(conn, camera, cam_opt):
         cam_opt['pr_exit'] = 0
         return
 
-    print('[PR] Preview is starting...')
+    logger.info('[PR] Preview is starting...')
     conn.settimeout(3)#None for blocking socket
     preview_stream = io.BytesIO()
     camera.led = cam_opt['cam_led']
     connection = True
     while connection:
         if cam_opt['pr_exit'] or cam_opt['exit']:
-            print('[PR] Received <exit> signal!')
+            logger.info('[PR] Received <exit> signal!')
             break
         camera.capture(preview_stream, 'jpeg', use_video_port=True, splitter_port=2, quality=85)
         flsize = preview_stream.tell()
@@ -33,7 +36,7 @@ def preview_mode(conn, camera, cam_opt):
                 connection = False
                 break
         except (BrokenPipeError, socket.timeout) as err:
-            print("Error occurred:", err)
+            logger.exception("Socket error")
             connection = False
             break
         preview_stream.seek(0)
@@ -42,6 +45,7 @@ def preview_mode(conn, camera, cam_opt):
                 connection = False
                 break
         except socket.timeout:
+            logger.exception("Socket error")
             connection = False
             break
         preview_stream.seek(0)
@@ -52,6 +56,7 @@ def preview_mode(conn, camera, cam_opt):
     if 'pr_active' in cam_opt['running']:
         del cam_opt['running']['pr_active']
     cam_opt['pr_exit'] = 0
+    logger.info("PR stopped")
     return
 
 if __name__ == '__main__':
