@@ -239,7 +239,8 @@ def receive_opts():
             logger.exception("CAM_OPT not updated. Socket timeout")
             return
     logger.info('All data received. CAM_OPT updated')
-    cam_opt_s = str(data_temp)[2:-1]
+    #cam_opt_s = str(data_temp)[2:-1]
+    cam_opt_s = data_temp.decode()
     cam_opt_tmp = json.loads(cam_opt_s)
     validating_cam_opt(cam_opt_tmp)
 
@@ -249,7 +250,7 @@ def send_opts():
     global conn, cam_opt
     conn.settimeout(3)#None
     cam_opt_s = json.dumps(cam_opt)
-    optstr = cam_opt_s.encode(encoding='UTF-8')
+    optstr = cam_opt_s.encode() #encoding='UTF-8')
     flsize = len(optstr)
     flen = struct.pack('<L', flsize)
     try:
