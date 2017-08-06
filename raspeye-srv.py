@@ -76,7 +76,7 @@ def listening2soc(srvsoc):
     try:
         actionNo = conn.recv(4)
     except socket.timeout as err:
-        logger.exception('Connection timeout')
+        logger.exception('Connection timeout', err)
         return
     else:
         actionNo = struct.unpack('<L', actionNo)[0]
@@ -239,8 +239,8 @@ def receive_opts():
             logger.exception("CAM_OPT not updated. Socket timeout")
             return
     logger.info('All data received. CAM_OPT updated')
-    #cam_opt_s = str(data_temp)[2:-1]
     cam_opt_s = data_temp.decode()
+    print(cam_opt_s) #------------------------------
     cam_opt_tmp = json.loads(cam_opt_s)
     validating_cam_opt(cam_opt_tmp)
 
@@ -263,7 +263,7 @@ def send_opts():
         logger.exception("CAM_OPT sending, socket timeout")
     else:
         if bytes_sent != None:
-            logger.error(('Sending CAM_OPT, bytes sent:', bytes_sent, 'out of', filesize))
+            logger.error(('Sending CAM_OPT, bytes sent:', bytes_sent, 'out of', flsize))
             conn.settimeout(None)
             return
         logger.info('CAM_OPT sending: all OK')
@@ -271,11 +271,7 @@ def send_opts():
     return
 
 
-    #-----------------------------------------
-
-    cam_opt = validating_cam_opt(cam_opt_tmp)
-    camopts_changed = True# I don't use it ATM
-    return
+#-----------------------------------------
 
 
 #The main loop starts here ------------
