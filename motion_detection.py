@@ -52,6 +52,7 @@ class SimpleMotionDetection(Thread): # I's going to be a daemon thread in the fu
         self.update_path()
         self.timedelta = datetime.timedelta(seconds=1)
         self.lastpic = datetime.datetime.now()
+        self.pictaken = 0
 
     def update_path(self):
         the_path = os.path.join(self.raspeye_path, self.DIR_NAME, self.theday)
@@ -60,18 +61,31 @@ class SimpleMotionDetection(Thread): # I's going to be a daemon thread in the fu
         self.thepath = the_path
 
     def update_md_times(self):
-        '''writing the time to the time-table file'''
+        '''writing the time to the time-table file and pictures.
+            Up to 2 pictures per second (the second one has 'b' at the end of its name).
+        '''
         filehnd = open(self.thefile, 'a')
         filehnd.write(datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S.%f\n"))
         filehnd.close()
         if datetime.datetime.now() >= self.lastpic + self.timedelta:
-            self.lastpic = datetime.datetime.now()
+            self.pictaken = 0
             #timelapse.timelapse_start(self.thepath, self.camera, self.cam_opt, md=True)
-            current_pic_name = self.lastpic.strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
+            current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f.jpg")
             self.camera.capture(os.path.join(self.thepath, current_pic_name),
                                 use_video_port=True,
                                 splitter_port=3,
                                 quality=85)
+            self.lastpic = datetime.datetime.now()
+            self.pictaken += 1
+        else:
+            if self.pictaken <= 1:
+                current_pic_name = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f_b.jpg")
+                self.camera.capture(os.path.join(self.thepath, current_pic_name),
+                                use_video_port=True,
+                                splitter_port=3,
+                                quality=85)
+                self.pictaken += 1
+
         return
 
 
