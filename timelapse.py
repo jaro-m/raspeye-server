@@ -117,6 +117,7 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
         print('[TL] A picture has been taken!')
         return
 
+
     def get_time_list(self):
         """Creates a list of datetime objects form values in self.cam_opt.
             ('tl_nop', 'tl_delay', 'tl_starts' and eventually 'tl_now')
@@ -165,6 +166,7 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
         self.tasks.append(temp_tasks)
         return
 
+
     def get_theearliest(self):
         """Finds the time of the first picture in the lists
             Returns a tuple, the time object and the path where the picture should be saved.
@@ -203,7 +205,7 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
                     break
             else:
                 if task['sequence'][0] - first_pic < self.time_res:
-                    thelist.append({'time': task['sequence'][0], 'path': task[path]})
+                    thelist.append({'time': task['sequence'][0], 'path': task['path']})
         return thelist
 
     def get_thelast(self):
@@ -289,13 +291,11 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
     def get_tasks(self):
         result = []
         for task in self.tasks:
-            tmp_lst = []
-            for tm in task['sequence']:
-                prn = tm.strftime("%Y/%m/%d %H.%M.%S,%f")
-                #print(prn)
-                tmp_lst.append(prn)
+            tmp_lst = list(map(lambda x: x.strftime("%Y/%m/%d %H.%M.%S,%f"), task['sequence']))
             result.append({'sequence': tmp_lst, 'path': task['path']})
         return result
+
+
 
 if __name__ == '__main__':
     print("It's a module for rapeye-srv.py\nStart raspeye-srv.py!")
