@@ -95,7 +95,7 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
             else:
                 return 0
 
-    def check_disk_space(self):
+    def check_disk_space(self): # this is obsolete as it's done in a separate thread globally
         """Checks whether there is at least 200MB free space on the disk"""
 
         disk_space = shutil.disk_usage(self.the_path)
@@ -271,7 +271,9 @@ class Timelapse(Thread): # I's going to be a daemon thread in the future
                         ind += 1
             
             # checking whether there's enough free space left on the disk
-            self.check_disk_space()
+            #self.check_disk_space()
+            if self.cam_opt['disk_full']:
+                break
 
             # checking for empty list
             for e in self.tasks:

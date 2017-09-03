@@ -16,6 +16,7 @@ import constants
 import preview
 import timelapse
 import motion_detection
+import background_jobs
 #from timeit import default_timer as timer
 
 try:
@@ -76,7 +77,7 @@ def listening2soc(srvsoc):
     try:
         actionNo = conn.recv(4)
     except socket.timeout as err:
-        logger.exception('Connection timeout', err)
+        logger.exception('Connection timeout')
         return
     else:
         actionNo = struct.unpack('<L', actionNo)[0]
@@ -278,6 +279,9 @@ def send_opts():
 
 srvsoc = start_sockets()
 cam_opt = settingup_defaults()
+bckgnd_jobs_thread = background_jobs.RPeye_Background(args=(raspeye_path, camera, cam_opt))
+logger.info("SRV starting BG")
+bckgnd_jobs_thread.start()
 
 donotexit = True# only for the while loop below
 while donotexit:
